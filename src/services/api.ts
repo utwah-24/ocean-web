@@ -27,6 +27,44 @@ export interface CartItem {
   quantity: number;
 }
 
+function normalizeProduct(raw: any): Product {
+  const nowIso = new Date().toISOString();
+
+  const sellerName =
+    raw?.seller_name ??
+    raw?.sellerName ??
+    raw?.seller?.shop_name ??
+    raw?.seller?.shopName ??
+    raw?.seller?.name ??
+    raw?.shop_name ??
+    raw?.shopName ??
+    raw?.seller?.user?.name ??
+    'Ocean Seller';
+
+  const image =
+    raw?.image ??
+    raw?.product_image ??
+    raw?.main_image ??
+    raw?.thumbnail ??
+    raw?.media?.image ??
+    '';
+
+  return {
+    id: Number(raw?.id ?? raw?.product_id ?? 0),
+    name: String(raw?.name ?? raw?.product_name ?? raw?.title ?? 'Unnamed Product'),
+    description: String(raw?.description ?? raw?.details ?? ''),
+    price: String(raw?.price ?? raw?.amount ?? raw?.selling_price ?? raw?.sale_price ?? '0'),
+    image: String(image),
+    sellerId: Number(raw?.sellerId ?? raw?.seller_id ?? raw?.seller?.id ?? 0),
+    seller_name: String(sellerName),
+    seller_image: raw?.seller_image ?? raw?.seller?.shop_image ?? raw?.seller?.image ?? undefined,
+    category_id: Number(raw?.category_id ?? raw?.category?.id ?? 0),
+    subcategory_id: Number(raw?.subcategory_id ?? raw?.subcategory?.id ?? 0),
+    created_at: String(raw?.created_at ?? nowIso),
+    updated_at: String(raw?.updated_at ?? raw?.created_at ?? nowIso),
+  };
+}
+
 class ApiService {
   private getAuthToken(): string | null {
     return localStorage.getItem('token');
@@ -156,7 +194,29 @@ class ApiService {
     if (params?.page) queryParams.append('page', params.page.toString());
 
     const query = queryParams.toString();
-    return this.request(`/product-interactions/personalized${query ? `?${query}` : ''}`);
+    const raw = await this.request<any>(`/product-interactions/personalized${query ? `?${query}` : ''}`);
+
+    // Some endpoints return `{ data: [...] }`, others `{ data: { data: [...] } }`, or even `[...]`
+    const container =
+      raw && typeof raw === 'object' && raw.data && typeof raw.data === 'object' && !Array.isArray(raw.data)
+        ? raw.data
+        : raw;
+
+    const listCandidate =
+      (container && Array.isArray(container.data) ? container.data : undefined) ??
+      (raw && Array.isArray(raw.data) ? raw.data : undefined) ??
+      (raw && Array.isArray(raw.products) ? raw.products : undefined) ??
+      (Array.isArray(raw) ? raw : []);
+
+    const products = (Array.isArray(listCandidate) ? listCandidate : []).map(normalizeProduct);
+
+    return {
+      data: products,
+      current_page: container?.current_page ?? raw?.current_page,
+      last_page: container?.last_page ?? raw?.last_page,
+      per_page: container?.per_page ?? raw?.per_page,
+      total: container?.total ?? raw?.total,
+    };
   }
 
   async getProduct(id: number): Promise<Product & {

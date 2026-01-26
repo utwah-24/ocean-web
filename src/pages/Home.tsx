@@ -40,13 +40,7 @@ export function Home() {
         page,
       });
       const productsData = response.data || [];
-      
-      // Debug: Log first product's image URL to help diagnose issues
-      if (productsData.length > 0 && import.meta.env.DEV) {
-        console.log('Sample product image URL:', productsData[0]?.image);
-        console.log('Sample product:', productsData[0]);
-      }
-      
+
       if (page === 1) {
         setProducts(productsData);
       } else {

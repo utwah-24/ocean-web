@@ -18,6 +18,18 @@ export function ProductCard({ product }: ProductCardProps) {
     addToCart(product, 1);
   };
 
+  const sellerName =
+    product.seller_name ??
+    // possible alternative shapes from different endpoints
+    (product as any).sellerName ??
+    (product as any).seller?.shop_name ??
+    (product as any).seller?.shopName ??
+    (product as any).seller?.name ??
+    (product as any).shop_name ??
+    (product as any).shopName ??
+    (product as any).seller?.user?.name ??
+    'Ocean Seller';
+
   return (
     <Link to={`/products/${product.id}`} className="product-card">
       <div className="product-image-container">
@@ -42,7 +54,7 @@ export function ProductCard({ product }: ProductCardProps) {
       </div>
       <div className="product-info">
         <h3 className="product-name">{product.name || 'Unnamed Product'}</h3>
-        <p className="product-seller">by {product.seller_name || 'Unknown Seller'}</p>
+        <p className="product-seller">by {sellerName}</p>
         <div className="product-price">
           {formatPrice(product.price)}
         </div>

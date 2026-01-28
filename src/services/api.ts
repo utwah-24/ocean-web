@@ -208,7 +208,62 @@ class ApiService {
       (raw && Array.isArray(raw.products) ? raw.products : undefined) ??
       (Array.isArray(raw) ? raw : []);
 
-    const products = (Array.isArray(listCandidate) ? listCandidate : []).map(normalizeProduct);
+    let products = (Array.isArray(listCandidate) ? listCandidate : []).map(normalizeProduct);
+
+    // Enrich products missing seller_name by fetching sellers from /sellers/{id}
+    try {
+      const missingSellerIds = Array.from(
+        new Set(
+          products
+            .filter((p) => !p.seller_name || p.seller_name === 'Ocean Seller')
+            .map((p) => p.sellerId)
+            .filter((id) => typeof id === 'number' && id > 0),
+        ),
+      );
+
+      if (missingSellerIds.length > 0) {
+        const sellerResponses = await Promise.all(
+          missingSellerIds.map(async (id) => {
+            try {
+              const seller = await this.request<any>(`/sellers/${id}`);
+              return { id, seller };
+            } catch (e) {
+              console.warn('Failed to fetch seller', id, e);
+              return { id, seller: null as any };
+            }
+          }),
+        );
+
+        const sellerNameById = new Map<number, string>();
+        sellerResponses.forEach(({ id, seller }) => {
+          if (!seller) return;
+          const nameFromApi =
+            seller.shop_name ??
+            seller.shopName ??
+            seller.name ??
+            seller.user?.name ??
+            undefined;
+          if (nameFromApi) {
+            sellerNameById.set(id, String(nameFromApi));
+          }
+        });
+
+        if (sellerNameById.size > 0) {
+          products = products.map((p) => {
+            if (!p.seller_name || p.seller_name === 'Ocean Seller') {
+              const name = sellerNameById.get(p.sellerId);
+              if (name) {
+                return { ...p, seller_name: name };
+              }
+            }
+            return p;
+          });
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to enrich products with seller names from /sellers', e);
+      // Fallback to existing data; UI will still work with generic seller label
+    }
 
     return {
       data: products,
@@ -219,22 +274,92 @@ class ApiService {
     };
   }
 
-  async getProduct(id: number): Promise<Product & {
-    additional_images?: string[];
-    seller_rating?: number;
-    seller_total_ratings?: number;
-    seller_status?: string;
-    seller_is_online?: boolean;
-    seller_phone?: string;
-    seller_location?: string;
-    seller_about?: string;
+  // Seller-specific products
+  async getSellerProducts(
+    sellerId: number,
+    params?: {
+      page?: number;
+      category_id?: number;
+      subcategory_id?: number;
+    },
+  ): Promise<{
+    data: Array<{
+      id: number;
+      name: string;
+      price: string;
+      image: string;
+    }>;
+    current_page: number;
+    last_page: number;
   }> {
-    return this.request(`/products/${id}`);
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.category_id) queryParams.append('category_id', params.category_id.toString());
+    if (params?.subcategory_id) queryParams.append('subcategory_id', params.subcategory_id.toString());
+
+    const query = queryParams.toString();
+    return this.request(`/sellers/${sellerId}/products${query ? `?${query}` : ''}`);
+  }
+
+  async getProduct(id: number): Promise<
+    Product & {
+      additional_images?: string[];
+      seller_rating?: number;
+      seller_total_ratings?: number;
+      seller_status?: string;
+      seller_is_online?: boolean;
+      seller_phone?: string;
+      seller_location?: string;
+      seller_about?: string;
+    }
+  > {
+    const raw = await this.request<any>(`/products/${id}`);
+    // Normalize core product fields (including seller_name) while keeping all extra fields
+    let normalized = normalizeProduct(raw);
+
+    // If seller_name is still generic, try enriching from /sellers/{id}
+    if (!normalized.seller_name || normalized.seller_name === 'Ocean Seller') {
+      const sellerId =
+        normalized.sellerId ??
+        raw?.sellerId ??
+        raw?.seller_id ??
+        raw?.seller?.id ??
+        0;
+
+      if (sellerId && typeof sellerId === 'number') {
+        try {
+          const seller = await this.request<any>(`/sellers/${sellerId}`);
+          const nameFromApi =
+            seller.shop_name ??
+            seller.shopName ??
+            seller.name ??
+            seller.user?.name ??
+            undefined;
+          if (nameFromApi) {
+            normalized = {
+              ...normalized,
+              seller_name: String(nameFromApi),
+            };
+          }
+        } catch (e) {
+          console.warn('Failed to fetch seller for product detail', sellerId, e);
+        }
+      }
+    }
+
+    return {
+      ...(raw || {}),
+      ...normalized,
+    };
   }
 
   // Categories
   async getCategories(): Promise<{ data: Category[] }> {
-    return this.request('/categories');
+    const res = await this.request<{ data: Category[] }>('/categories');
+    if (import.meta.env.DEV) {
+      console.log('Categories API response:', res);
+    }
+    return res;
   }
 
   async getSubcategories(sellerId?: number): Promise<{ data: Array<{

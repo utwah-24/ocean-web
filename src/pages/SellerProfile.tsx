@@ -32,24 +32,10 @@ export function SellerProfile() {
       try {
         const [sellerRes, productsRes] = await Promise.all([
           apiService['request']<Seller>(`/sellers/${sellerId}`),
-          apiService.getSellerProducts(sellerId),
+          apiService.getProducts({ seller_id: sellerId }),
         ]);
         setSeller(sellerRes);
-        const mappedProducts: Product[] = (productsRes.data || []).map((p) => ({
-          id: p.id,
-          name: p.name,
-          description: '',
-          price: p.price,
-          image: p.image,
-          sellerId: sellerRes.id,
-          seller_name: sellerRes.shop_name,
-          seller_image: sellerRes.shop_image,
-          category_id: 0,
-          subcategory_id: 0,
-          created_at: sellerRes.created_at || new Date().toISOString(),
-          updated_at: sellerRes.created_at || new Date().toISOString(),
-        }));
-        setProducts(mappedProducts);
+        setProducts(productsRes.data || []);
       } catch (e) {
         console.error('Failed to load seller profile:', e);
       } finally {

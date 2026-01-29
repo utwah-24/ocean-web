@@ -23,10 +23,7 @@ export function Header() {
         <nav className="nav">
           <Link to="/" className="nav-link">Home</Link>
           <Link to="/products" className="nav-link">Products</Link>
-          <Link to="/ads" className="nav-link">Ads</Link>
-          <Link to="/network" className="nav-link">Network</Link>
-          <Link to="/messages" className="nav-link">Messages</Link>
-          <Link to="/my-shop" className="nav-link">My Shop</Link>
+          <Link to="/categories" className="nav-link">Categories</Link>
         </nav>
 
         <div className="header-actions">

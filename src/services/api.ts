@@ -274,33 +274,6 @@ class ApiService {
     };
   }
 
-  // Seller-specific products
-  async getSellerProducts(
-    sellerId: number,
-    params?: {
-      page?: number;
-      category_id?: number;
-      subcategory_id?: number;
-    },
-  ): Promise<{
-    data: Array<{
-      id: number;
-      name: string;
-      price: string;
-      image: string;
-    }>;
-    current_page: number;
-    last_page: number;
-  }> {
-    const queryParams = new URLSearchParams();
-    if (params?.page) queryParams.append('page', params.page.toString());
-    if (params?.category_id) queryParams.append('category_id', params.category_id.toString());
-    if (params?.subcategory_id) queryParams.append('subcategory_id', params.subcategory_id.toString());
-
-    const query = queryParams.toString();
-    return this.request(`/sellers/${sellerId}/products${query ? `?${query}` : ''}`);
-  }
-
   async getProduct(id: number): Promise<
     Product & {
       additional_images?: string[];

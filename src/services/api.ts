@@ -1,4 +1,8 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://sagenashi.com/api/v3';
+// In development, use proxy to avoid CORS issues
+// In production, use the full API URL
+const API_BASE_URL = import.meta.env.DEV
+  ? '/api/v3'  // Use Vite proxy in development
+  : (import.meta.env.VITE_API_BASE_URL || 'https://sagenashi.com/api/v3');
 
 export interface Product {
   id: number;
@@ -74,10 +78,13 @@ class ApiService {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
+    const url = `${API_BASE_URL}${endpoint}`;
+    
     try {
       const token = this.getAuthToken();
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
         ...(options.headers as Record<string, string>),
       };
 
@@ -85,17 +92,81 @@ class ApiService {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      // Add CSRF token header if needed (some APIs require this)
+      // Note: For GET requests, CSRF is usually not required
+      if (options.method && options.method !== 'GET') {
+        headers['X-CSRF-TOKEN'] = '';
+      }
+
+      if (import.meta.env.DEV) {
+        console.log(`[API] ${options.method || 'GET'} ${url}`, {
+          headers,
+          hasToken: !!token,
+        });
+      }
+
+      const response = await fetch(url, {
         ...options,
         headers,
+        redirect: 'follow', // Follow redirects but check final URL
       });
+
+      if (import.meta.env.DEV) {
+        console.log(`[API Response]`, {
+          status: response.status,
+          statusText: response.statusText,
+          url: response.url,
+          originalUrl: url,
+          headers: Object.fromEntries(response.headers.entries()),
+        });
+      }
+
+      // Check if we were redirected to an unexpected location
+      const finalUrl = response.url;
+      if (finalUrl !== url && !finalUrl.includes('sagenashi.com') && !finalUrl.includes('/api/')) {
+        console.error('Unexpected redirect detected:', {
+          original: url,
+          final: finalUrl,
+          status: response.status,
+        });
+        if (response.status === 200 && finalUrl.includes('localhost')) {
+          throw new Error(
+            `Server redirected to localhost. This usually means:\n` +
+            `• The endpoint "${url}" doesn't exist on the server\n` +
+            `• The endpoint requires authentication\n` +
+            `• Server configuration issue\n\n` +
+            `Please verify the endpoint exists and check if authentication is required.`
+          );
+        }
+      }
 
       if (!response.ok) {
         const errorText = await response.text();
         let errorMessage = `API Error: ${response.status} ${response.statusText}`;
         try {
           const errorJson = JSON.parse(errorText);
-          errorMessage = errorJson.message || errorJson.error || errorMessage;
+          
+          // Handle Laravel-style validation errors
+          if (errorJson.errors && typeof errorJson.errors === 'object') {
+            const validationErrors = Object.entries(errorJson.errors)
+              .map(([field, messages]: [string, any]) => {
+                const msg = Array.isArray(messages) ? messages.join(', ') : messages;
+                return `${field}: ${msg}`;
+              })
+              .join('; ');
+            errorMessage = validationErrors || errorJson.message || errorJson.error || errorMessage;
+          } else {
+            errorMessage = errorJson.message || errorJson.error || errorMessage;
+          }
+          
+          // Log full error for debugging
+          if (import.meta.env.DEV) {
+            console.error('[API Error Response]', {
+              status: response.status,
+              errorJson,
+              errorText,
+            });
+          }
         } catch {
           // If not JSON, use the text or status text
           errorMessage = errorText || errorMessage;
@@ -112,9 +183,35 @@ class ApiService {
       }
     } catch (error) {
       // Handle network errors or other fetch errors
-      if (error instanceof TypeError && error.message.includes('fetch')) {
-        console.error('Network error:', error);
-        throw new Error('Unable to connect to the server. Please check your internet connection.');
+      if (error instanceof TypeError) {
+        const errorMessage = error.message.toLowerCase();
+        console.error('Network error:', {
+          error,
+          url,
+          message: error.message,
+          apiBaseUrl: API_BASE_URL,
+        });
+        
+        // Provide more specific error messages
+        if (errorMessage.includes('failed to fetch') || errorMessage.includes('networkerror')) {
+          throw new Error(
+            `Unable to connect to the server at ${API_BASE_URL}. ` +
+            `This could be due to:\n` +
+            `• CORS policy blocking the request\n` +
+            `• Server is down or unreachable\n` +
+            `• Network firewall blocking the connection\n` +
+            `• Incorrect API URL configuration\n\n` +
+            `Please check the browser console for more details.`
+          );
+        } else if (errorMessage.includes('cors')) {
+          throw new Error(
+            `CORS error: The server at ${API_BASE_URL} is not allowing requests from this origin. ` +
+            `Please contact the server administrator.`
+          );
+        }
+        throw new Error(
+          `Network error: ${error.message}. URL: ${url}`
+        );
       }
       throw error;
     }
@@ -122,18 +219,38 @@ class ApiService {
 
   // Authentication
   async login(countryCode: string, phone: string, password: string) {
-    return this.request<{
-      token: string;
-      role: string;
-      user: any;
-    }>('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({
-        country_code: countryCode,
-        phone,
-        password,
-      }),
-    });
+    // Clean phone number - remove any spaces, dashes, or special characters
+    const cleanPhone = phone.replace(/\D/g, '');
+    
+    const requestBody = {
+      country_code: countryCode,
+      phone: cleanPhone,
+      password: password,
+    };
+
+    if (import.meta.env.DEV) {
+      console.log('[Login API] Request body:', {
+        ...requestBody,
+        password: '***hidden***', // Don't log password
+      });
+    }
+
+    try {
+      const response = await this.request<{
+        token: string;
+        role: string;
+        user: any;
+      }>('/login', {
+        method: 'POST',
+        body: JSON.stringify(requestBody),
+      });
+      return response;
+    } catch (error) {
+      if (import.meta.env.DEV) {
+        console.error('[Login API] Error details:', error);
+      }
+      throw error;
+    }
   }
 
   async register(data: {
@@ -372,6 +489,47 @@ class ApiService {
       method: 'POST',
       body: JSON.stringify(orderData),
     });
+  }
+
+  // Expiring Posts (Ads)
+  async getExpiringPosts(params?: {
+    page?: number;
+    user_id?: number;
+  }): Promise<{
+    data: Array<{
+      id: number;
+      seller_id: number;
+      seller_name: string;
+      seller_image?: string;
+      content: string;
+      image?: string;
+      expires_at: string;
+      likes_count: number;
+      comments_count: number;
+      is_liked: boolean;
+      created_at: string;
+    }>;
+    current_page: number;
+    last_page: number;
+    next_page_url?: string;
+  }> {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.user_id) queryParams.append('user_id', params.user_id.toString());
+
+    const query = queryParams.toString();
+    const raw = await this.request<any>(`/expiring-posts/feed${query ? `?${query}` : ''}`);
+
+    // Handle nested data structure from API
+    const container = raw?.data || raw;
+    const postsData = container?.data || container || [];
+
+    return {
+      data: Array.isArray(postsData) ? postsData : [],
+      current_page: container?.current_page || raw?.current_page || 1,
+      last_page: container?.last_page || raw?.last_page || 1,
+      next_page_url: container?.next_page_url || raw?.next_page_url,
+    };
   }
 }
 

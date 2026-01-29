@@ -22,11 +22,56 @@ export function Login() {
     try {
       // Remove the + sign from country code for API call
       const codeWithoutPlus = countryCode.replace('+', '');
-      const response = await apiService.login(codeWithoutPlus, phone, password);
-      login(response.token, response.user);
-      navigate('/');
+      
+      // Validate inputs
+      if (!phone.trim()) {
+        setError('Please enter your phone number');
+        setLoading(false);
+        return;
+      }
+      if (!password.trim()) {
+        setError('Please enter your password');
+        setLoading(false);
+        return;
+      }
+
+      console.log('[Login] Attempting login with:', {
+        countryCode: codeWithoutPlus,
+        phone: phone.trim(),
+        phoneLength: phone.trim().length,
+      });
+
+      const response = await apiService.login(codeWithoutPlus, phone.trim(), password);
+      
+      if (response && response.token && response.user) {
+        login(response.token, response.user);
+        navigate('/');
+      } else {
+        setError('Invalid response from server. Please try again.');
+      }
     } catch (err: any) {
-      setError(err.message || 'Login failed. Please check your credentials.');
+      console.error('[Login] Error:', err);
+      
+      // Parse error message to provide more helpful feedback
+      let errorMessage = err.message || 'Login failed. Please check your credentials.';
+      
+      // Check for common error patterns
+      if (errorMessage.toLowerCase().includes('invalid data') || 
+          errorMessage.toLowerCase().includes('validation') ||
+          errorMessage.toLowerCase().includes('422')) {
+        errorMessage = 'Invalid phone number or password. Please check your credentials and try again.';
+      } else if (errorMessage.toLowerCase().includes('401') || 
+                 errorMessage.toLowerCase().includes('unauthorized')) {
+        errorMessage = 'Invalid credentials. Please check your phone number and password.';
+      } else if (errorMessage.toLowerCase().includes('404') || 
+                 errorMessage.toLowerCase().includes('not found')) {
+        errorMessage = 'User not found. Please check your phone number.';
+      } else if (errorMessage.toLowerCase().includes('network') || 
+                 errorMessage.toLowerCase().includes('fetch')) {
+        errorMessage = 'Unable to connect to the server. Please check your internet connection.';
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

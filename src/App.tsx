@@ -10,6 +10,7 @@ import { Categories } from './pages/Categories';
 import { SellerProfile } from './pages/SellerProfile';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
+import { Ads } from './pages/Ads';
 import './App.css';
 
 function AppContent() {
@@ -27,6 +28,7 @@ function AppContent() {
           <Route path="/cart" element={<Cart />} />
           <Route path="/sellers/:id" element={<SellerProfile />} />
           <Route path="/categories" element={<Categories />} />
+          <Route path="/ads" element={<Ads />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
         </Routes>

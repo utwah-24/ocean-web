@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { CartProvider } from './context/CartContext';
 import { AuthProvider } from './context/AuthContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -12,27 +12,36 @@ import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import './App.css';
 
+function AppContent() {
+  const location = useLocation();
+  const hideHeader = location.pathname === '/login' || location.pathname === '/register';
+
+  return (
+    <div className="app">
+      {!hideHeader && <Header />}
+      <main className="main-content">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/products" element={<Home />} />
+          <Route path="/products/:id" element={<ProductDetail />} />
+          <Route path="/cart" element={<Cart />} />
+          <Route path="/sellers/:id" element={<SellerProfile />} />
+          <Route path="/categories" element={<Categories />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+        </Routes>
+      </main>
+    </div>
+  );
+}
+
 function App() {
   return (
     <ErrorBoundary>
       <BrowserRouter>
         <AuthProvider>
           <CartProvider>
-            <div className="app">
-              <Header />
-              <main className="main-content">
-                <Routes>
-                  <Route path="/" element={<Home />} />
-                  <Route path="/products" element={<Home />} />
-                  <Route path="/products/:id" element={<ProductDetail />} />
-                  <Route path="/cart" element={<Cart />} />
-                  <Route path="/sellers/:id" element={<SellerProfile />} />
-                  <Route path="/categories" element={<Categories />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/register" element={<Register />} />
-                </Routes>
-              </main>
-            </div>
+            <AppContent />
           </CartProvider>
         </AuthProvider>
       </BrowserRouter>

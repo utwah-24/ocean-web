@@ -2,9 +2,17 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  width: 100%;
+  overflow-x: hidden;
 }
 
 .main-content {
   flex: 1;
   background: #f8f9fa;
+}
+
+.main-content .login-page,
+.main-content .register-page {
+  margin: 0;
+  min-height: 100vh;
 }

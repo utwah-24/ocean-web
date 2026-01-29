@@ -4,6 +4,8 @@
   position: sticky;
   top: 0;
   z-index: 1000;
+  width: 100%;
+  overflow-x: hidden;
 }
 
 .header-container {
@@ -13,7 +15,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 2rem;
+  gap: 1rem;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .logo {
@@ -24,6 +28,7 @@
   display: flex;
   align-items: center;
   transition: transform 0.2s;
+  flex-shrink: 0;
 }
 
 .logo:hover {
@@ -41,18 +46,22 @@
 
 .nav {
   display: flex;
-  gap: 2rem;
+  gap: 0.75rem;
   flex: 1;
   justify-content: center;
+  min-width: 0;
+  flex-wrap: wrap;
 }
 
 .nav-link {
   color: white;
   text-decoration: none;
   font-weight: 500;
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 0.75rem;
   border-radius: 6px;
   transition: background-color 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .nav-link:hover {
@@ -62,7 +71,30 @@
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.hamburger-btn {
+  display: none;
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 0.5rem;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+
+.hamburger-btn:hover {
+  transform: scale(1.1);
+}
+
+.hamburger-btn svg {
+  width: 24px;
+  height: 24px;
 }
 
 .user-name {
@@ -103,14 +135,15 @@
 .login-btn,
 .register-btn,
 .logout-btn {
-  padding: 0.6rem 1.2rem;
+  padding: 0.6rem 1rem;
   border-radius: 6px;
   font-weight: 500;
   text-decoration: none;
   transition: all 0.2s;
   border: none;
   cursor: pointer;
-  font-size: 1rem;
+  font-size: 0.9rem;
+  white-space: nowrap;
 }
 
 .login-btn {
@@ -144,26 +177,125 @@
   background: rgba(255, 255, 255, 0.3);
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .header-container {
-    padding: 1rem;
-    flex-wrap: wrap;
+    padding: 1rem 1.5rem;
+    gap: 0.75rem;
   }
 
   .nav {
-    order: 3;
-    width: 100%;
-    justify-content: center;
-    gap: 1rem;
+    gap: 0.5rem;
   }
 
   .nav-link {
     font-size: 0.9rem;
+    padding: 0.5rem 0.6rem;
+  }
+
+  .logo {
+    font-size: 1.5rem;
+  }
+
+  .logo-text {
     padding: 0.4rem 0.8rem;
+    font-size: 1.4rem;
+  }
+}
+
+/* Mobile Menu */
+.mobile-menu {
+  display: none;
+  background: linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%);
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease-out;
+}
+
+.mobile-menu-open {
+  max-height: 500px;
+  transition: max-height 0.3s ease-in;
+}
+
+.mobile-nav {
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+  gap: 0.5rem;
+}
+
+.mobile-nav-link {
+  color: white;
+  text-decoration: none;
+  font-weight: 500;
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+  text-align: center;
+}
+
+.mobile-nav-link:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+@media (max-width: 768px) {
+  .header-container {
+    padding: 1rem;
+    gap: 0.5rem;
+    flex-wrap: nowrap;
+  }
+
+  .nav {
+    display: none;
+  }
+
+  .hamburger-btn {
+    display: flex;
   }
 
   .user-name {
     display: none;
+  }
+
+  .login-btn,
+  .register-btn,
+  .logout-btn {
+    padding: 0.5rem 0.8rem;
+    font-size: 0.85rem;
+  }
+
+  .logo {
+    font-size: 1.3rem;
+  }
+
+  .logo-text {
+    padding: 0.3rem 0.6rem;
+    font-size: 1.2rem;
+  }
+
+  .mobile-menu {
+    display: block;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-container {
+    padding: 0.75rem;
+  }
+
+  .login-btn,
+  .register-btn {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.75rem;
+  }
+
+  .register-btn {
+    display: none;
+  }
+
+  .mobile-nav-link {
+    font-size: 0.9rem;
+    padding: 0.65rem 0.85rem;
   }
 }
 

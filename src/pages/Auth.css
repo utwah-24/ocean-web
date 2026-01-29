@@ -1,3 +1,308 @@
+/* Login Page Styles */
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: white;
+}
+
+/* Register Page Styles */
+.register-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: white;
+}
+
+/* Orange Header */
+.login-header {
+  background: linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%);
+  padding: 1.5rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.login-logo-container {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.login-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-logo-text {
+  color: white;
+  font-size: 1.5rem;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+}
+
+/* White Content Section */
+.login-content {
+  flex: 1;
+  padding: 2rem 1.5rem;
+  max-width: 500px;
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.login-title {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #000;
+  margin: 0 0 2rem 0;
+  text-align: center;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+/* Phone Input Group */
+.phone-input-group {
+  display: flex;
+  gap: 0.5rem;
+  align-items: stretch;
+}
+
+.country-code-dropdown {
+  position: relative;
+}
+
+.country-code-select {
+  padding: 0.875rem 1rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 1rem;
+  background: white;
+  color: #333;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2.5rem;
+  min-width: 100px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.country-code-select:focus {
+  border-color: #ff6b35;
+}
+
+.phone-input {
+  flex: 1;
+  padding: 0.875rem 1rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.phone-input:focus {
+  border-color: #ff6b35;
+}
+
+.phone-input::placeholder {
+  color: #999;
+}
+
+/* Password Input Group */
+.password-input-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 0 1rem;
+  transition: border-color 0.2s;
+}
+
+.password-input-group:focus-within {
+  border-color: #ff6b35;
+}
+
+.lock-icon {
+  color: #999;
+  margin-right: 0.75rem;
+  flex-shrink: 0;
+}
+
+.password-input {
+  flex: 1;
+  padding: 0.875rem 0;
+  border: none;
+  outline: none;
+  font-size: 1rem;
+  background: transparent;
+}
+
+.password-input::placeholder {
+  color: #999;
+}
+
+.password-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+  margin-left: 0.5rem;
+  flex-shrink: 0;
+  transition: color 0.2s;
+}
+
+.password-toggle:hover {
+  color: #ff6b35;
+}
+
+/* Icon Input Group (for Name and Email) */
+.icon-input-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 0 1rem;
+  transition: border-color 0.2s;
+}
+
+.icon-input-group:focus-within {
+  border-color: #ff6b35;
+}
+
+.input-icon {
+  color: #999;
+  margin-right: 0.75rem;
+  flex-shrink: 0;
+}
+
+.icon-input {
+  flex: 1;
+  padding: 0.875rem 0;
+  border: none;
+  outline: none;
+  font-size: 1rem;
+  background: transparent;
+}
+
+.icon-input::placeholder {
+  color: #999;
+}
+
+/* Validation Messages */
+.validation-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.validation-message {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  padding: 0.5rem 0;
+}
+
+.validation-message svg {
+  flex-shrink: 0;
+}
+
+.validation-error {
+  color: #c62828;
+}
+
+.validation-success {
+  color: #2e7d32;
+}
+
+/* Login Button */
+.login-submit-btn {
+  background: #ff6b35;
+  color: white;
+  border: none;
+  padding: 1rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 0.5rem;
+}
+
+.login-submit-btn:hover:not(:disabled) {
+  background: #ff8c42;
+}
+
+.login-submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Links */
+.forgot-password-link {
+  text-align: center;
+  color: #ff6b35;
+  text-decoration: none;
+  font-size: 0.95rem;
+  margin-bottom: 1.5rem;
+  transition: color 0.2s;
+}
+
+.forgot-password-link:hover {
+  color: #ff8c42;
+  text-decoration: underline;
+}
+
+.register-link-text {
+  text-align: center;
+  color: #333;
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.register-link {
+  color: #ff6b35;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.register-link:hover {
+  color: #ff8c42;
+  text-decoration: underline;
+}
+
+/* Error Message */
+.error-message {
+  background: #ffebee;
+  color: #c62828;
+  padding: 1rem;
+  border-radius: 8px;
+  border-left: 4px solid #c62828;
+  font-size: 0.95rem;
+  margin-bottom: 1rem;
+}
+
+/* Legacy Auth Styles (for Register page) */
 .auth-page {
   min-height: 100vh;
   display: flex;
@@ -66,15 +371,6 @@
   box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
 }
 
-.error-message {
-  background: #ffebee;
-  color: #c62828;
-  padding: 1rem;
-  border-radius: 8px;
-  border-left: 4px solid #c62828;
-  font-size: 0.95rem;
-}
-
 .auth-submit-btn {
   background: #ff6b35;
   color: white;
@@ -129,6 +425,14 @@
 
   .auth-header h1 {
     font-size: 2rem;
+  }
+
+  .login-content {
+    padding: 1.5rem 1rem;
+  }
+
+  .login-title {
+    font-size: 1.75rem;
   }
 }
 

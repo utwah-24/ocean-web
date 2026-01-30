@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { apiService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import logoImage from '../assets/logo.jpeg';
 import './Auth.css';
 
 export function Register() {
@@ -66,13 +67,7 @@ export function Register() {
       {/* Orange Header */}
       <div className="login-header">
         <div className="login-logo-container">
-          <div className="login-logo">
-            <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-              <circle cx="20" cy="20" r="18" stroke="white" strokeWidth="2" fill="none" />
-              <circle cx="20" cy="20" r="8" fill="#ff8c42" />
-            </svg>
-          </div>
-          <span className="login-logo-text">Ocean</span>
+          <img src={logoImage} alt="Ocean" className="login-logo-image" />
         </div>
       </div>
 

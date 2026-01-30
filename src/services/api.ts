@@ -564,10 +564,67 @@ class ApiService {
       orderId: number;
       transactionId?: string;
       referenceId?: string;
-    }>('/orders', {
+    }>('/create/order', {
       method: 'POST',
       body: JSON.stringify(orderData),
     });
+  }
+
+  async getOrders() {
+    return this.request<{
+      success: boolean;
+      data: Array<any>;
+    }>('/orders');
+  }
+
+  async getOrder(orderId: number) {
+    return this.request<{
+      success: boolean;
+      data: any;
+    }>(`/orders/${orderId}`);
+  }
+
+  async updateOrderStatus(orderId: number, status: string) {
+    return this.request<{
+      success: boolean;
+      message: string;
+    }>(`/orders/${orderId}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status }),
+    });
+  }
+
+  async approveOrder(orderId: number) {
+    return this.request<{
+      success: boolean;
+      message: string;
+    }>(`/orders/${orderId}/approve`, {
+      method: 'POST',
+    });
+  }
+
+  async requestPayment(paymentData: {
+    amount: number;
+    msisdn: string;
+    order_id?: number;
+    description?: string;
+  }) {
+    return this.request<{
+      success: boolean;
+      message: string;
+      referenceId: string;
+      transactionId?: string;
+    }>('/ecommerce/client/purchases/request-to-pay', {
+      method: 'POST',
+      body: JSON.stringify(paymentData),
+    });
+  }
+
+  async getPurchaseDetails(referenceId: string) {
+    return this.request<{
+      success: boolean;
+      data: any;
+    }>(`/ecommerce/client/purchases/${referenceId}`);
   }
 
   // Expiring Posts (Ads)
@@ -803,6 +860,68 @@ class ApiService {
     if (userId) queryParams.append('user_id', userId.toString());
     const query = queryParams.toString();
     return this.request(`/sellers/${sellerId}/follow-status${query ? `?${query}` : ''}`);
+  }
+
+  // Get all sellers
+  async getAllSellers(params?: {
+    page?: number;
+    search?: string;
+  }): Promise<{
+    data: Array<any>;
+    current_page?: number;
+    last_page?: number;
+  }> {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.search) queryParams.append('search', params.search);
+    
+    const query = queryParams.toString();
+    return this.request(`/sellers${query ? `?${query}` : ''}`);
+  }
+
+  // Global search (products, sellers, etc.)
+  async globalSearch(query: string, params?: {
+    type?: 'all' | 'products' | 'sellers' | 'users';
+    page?: number;
+  }): Promise<{
+    success?: boolean;
+    data?: {
+      sellers?: Array<any>;
+      products?: Array<any>;
+      meta?: any;
+    };
+    sellers?: Array<any>;
+    products?: Array<any>;
+    users?: Array<any>;
+  }> {
+    const queryParams = new URLSearchParams();
+    queryParams.append('query', query);
+    if (params?.type) queryParams.append('type', params.type);
+    if (params?.page) queryParams.append('page', params.page.toString());
+    
+    const queryString = queryParams.toString();
+    return this.request(`/search${queryString ? `?${queryString}` : ''}`);
+  }
+
+  // Get seller followers count
+  async getSellerFollowers(sellerId: number, params?: {
+    page?: number;
+  }): Promise<{
+    success: boolean;
+    total_followers: number;
+    followers: {
+      current_page: number;
+      data: Array<any>;
+      total: number;
+      per_page: number;
+    };
+    seller: any;
+  }> {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append('page', params.page.toString());
+    
+    const query = queryParams.toString();
+    return this.request(`/sellers/${sellerId}/followers${query ? `?${query}` : ''}`);
   }
 }
 

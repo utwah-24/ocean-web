@@ -3,7 +3,13 @@ import { apiService } from '../services/api';
 import type { Product, Category } from '../services/api';
 import { ProductCard } from '../components/ProductCard';
 import { Loader } from '../components/Loader';
+import Hero1 from '../assets/Hero-1.svg';
+import Hero2 from '../assets/Hero-2.svg';
+import Hero3 from '../assets/Hero-3.svg';
+import Hero4 from '../assets/Hero-4.svg';
 import './Home.css';
+
+const heroImages = [Hero1, Hero2, Hero3, Hero4];
 
 export function Home() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -13,6 +19,7 @@ export function Home() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [currentHeroIndex, setCurrentHeroIndex] = useState(0);
 
   useEffect(() => {
     loadCategories();
@@ -21,6 +28,15 @@ export function Home() {
   useEffect(() => {
     loadProducts();
   }, [page]);
+
+  // Hero slideshow effect
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentHeroIndex((prev) => (prev + 1) % heroImages.length);
+    }, 5000); // Change image every 5 seconds
+
+    return () => clearInterval(interval);
+  }, []);
 
   const loadCategories = async () => {
     try {
@@ -78,19 +94,29 @@ export function Home() {
   return (
     <div className="home">
       <section className="hero">
-        <div className="hero-content">
-          <h1 className="hero-title">Welcome to Ocean</h1>
-          <p className="hero-subtitle">Discover amazing products from trusted sellers</p>
-          <form onSubmit={handleSearch} className="search-form">
-            <input
-              type="text"
-              placeholder="Search for products..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="search-input"
+        <div className="hero-container">
+          <div className="hero-content">
+            <h1 className="hero-title">Welcome to Ocean E-commerce</h1>
+            <p className="hero-subtitle">Discover amazing deals from trusted sellers</p>
+          </div>
+          <div className="hero-image-container">
+            <img 
+              src={heroImages[currentHeroIndex]} 
+              alt="Featured" 
+              className="hero-image"
+              key={currentHeroIndex}
             />
-            <button type="submit" className="search-btn">Search</button>
-          </form>
+            <div className="hero-dots">
+              {heroImages.map((_, index) => (
+                <button
+                  key={index}
+                  className={`hero-dot ${index === currentHeroIndex ? 'active' : ''}`}
+                  onClick={() => setCurrentHeroIndex(index)}
+                  aria-label={`Go to slide ${index + 1}`}
+                />
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
@@ -121,7 +147,19 @@ export function Home() {
       )}
 
       <section className="products-section">
-        <h2 className="section-title">Personalized for You</h2>
+        <div className="section-header">
+          <h2 className="section-title">Personalized for You</h2>
+          <form onSubmit={handleSearch} className="search-form">
+            <input
+              type="text"
+              placeholder="Search for products..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="search-input"
+            />
+            <button type="submit" className="search-btn">Search</button>
+          </form>
+        </div>
 
         {loading && products.length === 0 ? (
           <Loader />

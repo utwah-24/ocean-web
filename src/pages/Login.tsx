@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { apiService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { CountryDropdown } from '../components/CountryDropdown';
+import logoImage from '../assets/logo.jpeg';
 import './Auth.css';
 
 export function Login() {
@@ -42,6 +43,9 @@ export function Login() {
       });
 
       const response = await apiService.login(countryCode, phone.trim(), password);
+      
+      console.log('[Login] Full API response:', response);
+      console.log('[Login] User object:', response.user);
       
       if (response && response.token && response.user) {
         login(response.token, response.user);
@@ -92,13 +96,7 @@ export function Login() {
       {/* Orange Header */}
       <div className="login-header">
         <div className="login-logo-container">
-          <div className="login-logo">
-            <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-              <circle cx="20" cy="20" r="18" stroke="white" strokeWidth="2" fill="none" />
-              <circle cx="20" cy="20" r="8" fill="#ff8c42" />
-            </svg>
-          </div>
-          <span className="login-logo-text">Ocean</span>
+          <img src={logoImage} alt="Ocean" className="login-logo-image" />
         </div>
       </div>
 

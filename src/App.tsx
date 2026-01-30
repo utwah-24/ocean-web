@@ -6,8 +6,11 @@ import { Header } from './components/Header';
 import { Home } from './pages/Home';
 import { ProductDetail } from './pages/ProductDetail';
 import { Cart } from './pages/Cart';
+import { Checkout } from './pages/Checkout';
 import { Categories } from './pages/Categories';
 import { SellerProfile } from './pages/SellerProfile';
+import { MyProfile } from './pages/MyProfile';
+import { Network } from './pages/Network';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { Ads } from './pages/Ads';
@@ -26,8 +29,11 @@ function AppContent() {
           <Route path="/products" element={<Home />} />
           <Route path="/products/:id" element={<ProductDetail />} />
           <Route path="/cart" element={<Cart />} />
+          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/my-profile" element={<MyProfile />} />
           <Route path="/sellers/:id" element={<SellerProfile />} />
           <Route path="/categories" element={<Categories />} />
+          <Route path="/network" element={<Network />} />
           <Route path="/ads" element={<Ads />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />

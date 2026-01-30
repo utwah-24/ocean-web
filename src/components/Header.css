@@ -35,13 +35,11 @@
   transform: scale(1.05);
 }
 
-.logo-text {
-  background: white;
-  color: #ff6b35;
-  padding: 0.5rem 1rem;
+.logo-image {
+  height: 50px;
+  width: auto;
+  object-fit: contain;
   border-radius: 8px;
-  font-weight: 800;
-  letter-spacing: 1px;
 }
 
 .nav {
@@ -100,6 +98,16 @@
 .user-name {
   color: white;
   font-weight: 500;
+  text-decoration: none;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.user-name:hover {
+  background-color: rgba(255, 255, 255, 0.2);
 }
 
 .cart-link {

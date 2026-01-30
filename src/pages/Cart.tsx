@@ -16,7 +16,13 @@ export function Cart() {
       navigate('/login');
       return;
     }
-    alert('Checkout functionality will be implemented with order API');
+
+    if (items.length === 0) {
+      alert('Your cart is empty');
+      return;
+    }
+
+    navigate('/checkout');
   };
 
   if (items.length === 0) {
@@ -101,7 +107,11 @@ export function Cart() {
               <span>Total:</span>
               <span>{formatPrice(getTotalPrice())}</span>
             </div>
-            <button onClick={handleCheckout} className="checkout-btn">
+            <button 
+              onClick={handleCheckout} 
+              className="checkout-btn"
+              disabled={items.length === 0}
+            >
               Proceed to Checkout
             </button>
             <button onClick={clearCart} className="clear-cart-btn">

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import logoImage from '../assets/logo.jpeg';
 import './Header.css';
 
 export function Header() {
@@ -28,7 +29,7 @@ export function Header() {
     <header className="header">
       <div className="header-container">
         <Link to="/" className="logo" onClick={closeMobileMenu}>
-          <span className="logo-text">Ocean</span>
+          <img src={logoImage} alt="Ocean" className="logo-image" />
         </Link>
 
         <nav className="nav">
@@ -53,7 +54,14 @@ export function Header() {
 
           {isAuthenticated ? (
             <>
-              <span className="user-name">Hi, {user?.name}</span>
+              <Link 
+                to="/my-profile" 
+                className="user-name"
+                onClick={closeMobileMenu}
+                title="View my seller profile"
+              >
+                Hi, {user?.name}
+              </Link>
               <button onClick={handleLogout} className="logout-btn">Logout</button>
             </>
           ) : (

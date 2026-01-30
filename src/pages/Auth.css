@@ -27,20 +27,13 @@
 .login-logo-container {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-}
-
-.login-logo {
-  display: flex;
-  align-items: center;
   justify-content: center;
 }
 
-.login-logo-text {
-  color: white;
-  font-size: 1.5rem;
-  font-weight: bold;
-  letter-spacing: 0.5px;
+.login-logo-image {
+  height: 50px;
+  width: auto;
+  object-fit: contain;
 }
 
 /* White Content Section */

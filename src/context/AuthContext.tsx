@@ -6,6 +6,7 @@ interface User {
   name: string;
   phone: string;
   email: string;
+  seller_id?: number;
 }
 
 interface AuthContextType {

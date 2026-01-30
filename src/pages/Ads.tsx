@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { apiService } from '../services/api';
+import { Link } from 'react-router-dom';
+import { apiService, type CommentItem } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { getImageUrl, handleImageError } from '../utils/imageUtils';
+import { Loader } from '../components/Loader';
 import './Ads.css';
 
 interface ExpiringPost {
@@ -16,16 +18,167 @@ interface ExpiringPost {
   comments_count: number;
   is_liked: boolean;
   created_at: string;
+  product_id?: number;
 }
 
 export function Ads() {
   const { user, isAuthenticated } = useAuth();
-  const navigate = useNavigate();
   const [posts, setPosts] = useState<ExpiringPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+
+  // Comments modal state
+  const [activePostId, setActivePostId] = useState<number | null>(null);
+  const [comments, setComments] = useState<CommentItem[]>([]);
+  const [commentsLoading, setCommentsLoading] = useState(false);
+  const [commentsError, setCommentsError] = useState<string | null>(null);
+  const [newComment, setNewComment] = useState('');
+  const [submittingComment, setSubmittingComment] = useState(false);
+  const [replyToCommentId, setReplyToCommentId] = useState<number | null>(null);
+  const [replyText, setReplyText] = useState('');
+  const [submittingReplyId, setSubmittingReplyId] = useState<number | null>(null);
+  const [likingPostId, setLikingPostId] = useState<number | null>(null);
+  const [likingCommentId, setLikingCommentId] = useState<number | null>(null);
+
+  const getSellerInitial = (name: unknown) => {
+    const s = typeof name === 'string' ? name.trim() : '';
+    return (s[0] || '?').toUpperCase();
+  };
+
+  const closeComments = () => {
+    setActivePostId(null);
+    setComments([]);
+    setCommentsError(null);
+    setCommentsLoading(false);
+    setNewComment('');
+    setReplyToCommentId(null);
+    setReplyText('');
+    setSubmittingReplyId(null);
+  };
+
+  const extractCommentText = (c: CommentItem) => String(c.comment ?? c.message ?? '');
+
+  const loadComments = async (postId: number, productId?: number) => {
+    setCommentsLoading(true);
+    setCommentsError(null);
+    try {
+      const res = await apiService.getExpiringPostComments(postId, productId);
+      const list = Array.isArray(res?.data) ? res.data : [];
+      setComments(list);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Failed to load comments';
+      setCommentsError(msg);
+      setComments([]);
+    } finally {
+      setCommentsLoading(false);
+    }
+  };
+
+  const openComments = async (post: ExpiringPost) => {
+    setActivePostId(post.id);
+    await loadComments(post.id, post.product_id);
+  };
+
+  const toggleLikePost = async (post: ExpiringPost) => {
+    if (likingPostId === post.id) return;
+    setLikingPostId(post.id);
+    try {
+      const res = await apiService.toggleLikeExpiringPost(post.id);
+      setPosts((prev) =>
+        prev.map((p) => {
+          if (p.id !== post.id) return p;
+          // Always use the API response values if available
+          const nextLiked = typeof res?.is_liked === 'boolean' ? res.is_liked : !p.is_liked;
+          // Use API response likes_count if available, otherwise calculate based on toggle
+          const nextLikes =
+            typeof res?.likes_count === 'number'
+              ? res.likes_count
+              : p.is_liked
+              ? Math.max(0, p.likes_count - 1) // If currently liked, unliking decreases count
+              : p.likes_count + 1; // If not liked, liking increases count
+          return { ...p, is_liked: nextLiked, likes_count: Math.max(0, nextLikes) };
+        }),
+      );
+    } catch (e) {
+      console.error('Failed to like post', e);
+      setCommentsError(e instanceof Error ? e.message : 'Failed to like post');
+    } finally {
+      setLikingPostId(null);
+    }
+  };
+
+  const toggleLikeComment = async (commentId: number) => {
+    if (likingCommentId === commentId) return;
+    setLikingCommentId(commentId);
+    try {
+      await apiService.toggleLikeComment(commentId);
+      if (activePostId) {
+        const post = posts.find((p) => p.id === activePostId);
+        await loadComments(activePostId, post?.product_id);
+      }
+    } catch (e) {
+      console.error('Failed to like comment', e);
+      setCommentsError(e instanceof Error ? e.message : 'Failed to like comment');
+    } finally {
+      setLikingCommentId(null);
+    }
+  };
+
+  const submitComment = async () => {
+    if (!activePostId) return;
+    const text = newComment.trim();
+    if (!text) return;
+    if (submittingComment) return;
+
+    setSubmittingComment(true);
+    setCommentsError(null);
+    try {
+      await apiService.addExpiringPostComment(activePostId, {
+        user_id: user?.id,
+        comment: text,
+      });
+      setNewComment('');
+      const post = posts.find((p) => p.id === activePostId);
+      await loadComments(activePostId, post?.product_id);
+      // Best-effort update of the post's comment counter
+      setPosts((prev) =>
+        prev.map((p) => (p.id === activePostId ? { ...p, comments_count: p.comments_count + 1 } : p)),
+      );
+    } catch (e) {
+      console.error('Failed to add comment', e);
+      setCommentsError(e instanceof Error ? e.message : 'Failed to add comment');
+    } finally {
+      setSubmittingComment(false);
+    }
+  };
+
+  const submitReply = async (commentId: number) => {
+    const text = replyText.trim();
+    if (!text) return;
+    if (submittingReplyId === commentId) return;
+
+    setSubmittingReplyId(commentId);
+    setCommentsError(null);
+    try {
+      await apiService.replyToComment(commentId, {
+        user_id: user?.id,
+        comment: text,
+      });
+      setReplyText('');
+      setReplyToCommentId(null);
+      if (activePostId) {
+        const post = posts.find((p) => p.id === activePostId);
+        await loadComments(activePostId, post?.product_id);
+      }
+    } catch (e) {
+      console.error('Failed to reply', e);
+      setCommentsError(e instanceof Error ? e.message : 'Failed to reply');
+    } finally {
+      setSubmittingReplyId(null);
+    }
+  };
 
   useEffect(() => {
     // Only load posts if user is authenticated
@@ -35,6 +188,15 @@ export function Ads() {
       setLoading(false);
     }
   }, [page, isAuthenticated]);
+
+  useEffect(() => {
+    if (!activePostId) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeComments();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [activePostId]);
 
   const loadPosts = async () => {
     if (!isAuthenticated) {
@@ -137,7 +299,7 @@ export function Ads() {
         <p className="ads-subtitle">Limited time offers from sellers</p>
 
         {loading && posts.length === 0 ? (
-          <div className="ads-loading">Loading ads...</div>
+          <Loader />
         ) : error ? (
           <div className="ads-error">
             <div className="ads-error-title">Error Loading Ads</div>
@@ -172,17 +334,19 @@ export function Ads() {
                     >
                       {post.seller_image ? (
                         <img
-                          src={post.seller_image}
+                          src={getImageUrl(post.seller_image)}
                           alt={post.seller_name}
                           className="ad-seller-avatar"
+                          onError={handleImageError}
+                          loading="lazy"
                         />
                       ) : (
                         <div className="ad-seller-avatar-placeholder">
-                          {post.seller_name.charAt(0).toUpperCase()}
+                          {getSellerInitial(post.seller_name)}
                         </div>
                       )}
                       <div className="ad-seller-details">
-                        <span className="ad-seller-name">{post.seller_name}</span>
+                        <span className="ad-seller-name">{post.seller_name || 'Ocean Seller'}</span>
                         <span className="ad-time">
                           {new Date(post.created_at).toLocaleDateString()}
                         </span>
@@ -199,13 +363,26 @@ export function Ads() {
 
                   {post.image && (
                     <div className="ad-image-container">
-                      <img src={post.image} alt="Ad" className="ad-image" />
+                      <img
+                        src={getImageUrl(post.image)}
+                        alt="Ad"
+                        className="ad-image"
+                        onError={handleImageError}
+                        loading="lazy"
+                      />
                     </div>
                   )}
 
                   <div className="ad-footer">
                     <div className="ad-stats">
-                      <span className="ad-stat">
+                      <button
+                        type="button"
+                        className={`ad-stat ad-stat-btn ${post.is_liked ? 'ad-stat-btn-liked' : ''}`}
+                        onClick={() => toggleLikePost(post)}
+                        disabled={likingPostId === post.id}
+                        aria-label={post.is_liked ? 'Unlike post' : 'Like post'}
+                        title={post.is_liked ? 'Unlike' : 'Like'}
+                      >
                         <svg
                           width="18"
                           height="18"
@@ -217,8 +394,14 @@ export function Ads() {
                           <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
                         </svg>
                         {post.likes_count}
-                      </span>
-                      <span className="ad-stat">
+                      </button>
+                      <button
+                        type="button"
+                        className="ad-stat ad-stat-btn"
+                        onClick={() => openComments(post)}
+                        aria-label="Open comments"
+                        title="Comments"
+                      >
                         <svg
                           width="18"
                           height="18"
@@ -230,7 +413,7 @@ export function Ads() {
                           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                         </svg>
                         {post.comments_count}
-                      </span>
+                      </button>
                     </div>
                     <Link
                       to={`/sellers/${post.seller_id}`}
@@ -255,6 +438,135 @@ export function Ads() {
           </>
         )}
       </div>
+
+      {activePostId && (
+        <div
+          className="ads-modal-overlay"
+          role="dialog"
+          aria-modal="true"
+          onClick={closeComments}
+        >
+          <div className="ads-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="ads-modal-header">
+              <div className="ads-modal-title">Comments</div>
+              <button type="button" className="ads-modal-close" onClick={closeComments} aria-label="Close">
+                ×
+              </button>
+            </div>
+
+            {commentsError && <div className="ads-modal-error">{commentsError}</div>}
+
+            <div className="ads-modal-body">
+              {commentsLoading ? (
+                <Loader />
+              ) : comments.length === 0 ? (
+                <div className="ads-modal-empty">No comments yet. Be the first to comment.</div>
+              ) : (
+                <div className="ads-comments-list">
+                  {comments.map((c) => (
+                    <div key={c.id} className="ads-comment">
+                      <div className="ads-comment-meta">
+                        <div className="ads-comment-author">{c.user_name || `User ${c.user_id ?? ''}`.trim()}</div>
+                        {c.created_at && (
+                          <div className="ads-comment-time">
+                            {new Date(c.created_at).toLocaleString()}
+                          </div>
+                        )}
+                      </div>
+                      <div className="ads-comment-text">{extractCommentText(c)}</div>
+                      <div className="ads-comment-actions">
+                        <button
+                          type="button"
+                          className="ads-comment-action"
+                          onClick={() => toggleLikeComment(c.id)}
+                          disabled={likingCommentId === c.id}
+                        >
+                          Like{typeof c.likes_count === 'number' ? ` (${c.likes_count})` : ''}
+                        </button>
+                        <button
+                          type="button"
+                          className="ads-comment-action"
+                          onClick={() => setReplyToCommentId((prev) => (prev === c.id ? null : c.id))}
+                        >
+                          Reply
+                        </button>
+                      </div>
+
+                      {replyToCommentId === c.id && (
+                        <div className="ads-reply-box">
+                          <textarea
+                            className="ads-textarea"
+                            rows={2}
+                            placeholder="Write a reply…"
+                            value={replyText}
+                            onChange={(e) => setReplyText(e.target.value)}
+                          />
+                          <div className="ads-reply-actions">
+                            <button
+                              type="button"
+                              className="ads-btn-secondary"
+                              onClick={() => {
+                                setReplyToCommentId(null);
+                                setReplyText('');
+                              }}
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              type="button"
+                              className="ads-btn-primary"
+                              onClick={() => submitReply(c.id)}
+                              disabled={submittingReplyId === c.id}
+                            >
+                              {submittingReplyId === c.id ? 'Sending…' : 'Send Reply'}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {Array.isArray(c.replies) && c.replies.length > 0 && (
+                        <div className="ads-replies">
+                          {c.replies.map((r) => (
+                            <div key={r.id} className="ads-reply">
+                              <div className="ads-comment-meta">
+                                <div className="ads-comment-author">{r.user_name || `User ${r.user_id ?? ''}`.trim()}</div>
+                                {r.created_at && (
+                                  <div className="ads-comment-time">
+                                    {new Date(r.created_at).toLocaleString()}
+                                  </div>
+                                )}
+                              </div>
+                              <div className="ads-comment-text">{extractCommentText(r)}</div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="ads-modal-footer">
+              <textarea
+                className="ads-textarea"
+                rows={3}
+                placeholder="Add a comment…"
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+              />
+              <button
+                type="button"
+                className="ads-btn-primary"
+                onClick={submitComment}
+                disabled={submittingComment || newComment.trim().length === 0}
+              >
+                {submittingComment ? 'Posting…' : 'Post Comment'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

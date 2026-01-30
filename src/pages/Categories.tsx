@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { apiService } from '../services/api';
 import type { Category } from '../services/api';
+import { Loader } from '../components/Loader';
 import './Categories.css';
 
 export function Categories() {
@@ -33,7 +34,7 @@ export function Categories() {
       <div className="categories-container">
         <h1 className="categories-title">Categories</h1>
         {loading ? (
-          <div className="categories-loading">Loading categories...</div>
+          <Loader />
         ) : error ? (
           <div className="categories-empty">
             Failed to load categories from the API.

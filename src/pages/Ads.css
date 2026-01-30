@@ -162,14 +162,17 @@
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  align-items: flex-start;
 }
 
 .ad-card {
   background: white;
   border-radius: 12px;
-  padding: 1.5rem;
+  padding: 1rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transition: all 0.2s;
+  width: 40%;
+  max-width: 400px;
 }
 
 .ad-card:hover {
@@ -257,14 +260,20 @@
   margin-bottom: 1rem;
   border-radius: 8px;
   overflow: hidden;
-  background: #f0f0f0;
+  background: rgba(255, 255, 255, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-height: 300px;
 }
 
 .ad-image {
-  width: 100%;
+  max-width: 100%;
+  max-height: 300px;
+  width: auto;
   height: auto;
   display: block;
-  object-fit: cover;
+  object-fit: contain;
 }
 
 .ad-footer {
@@ -289,8 +298,269 @@
   font-size: 0.9rem;
 }
 
+.ad-stat-btn {
+  background: transparent;
+  border: none;
+  padding: 0.25rem 0.35rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s, opacity 0.2s, color 0.2s;
+}
+
+.ad-stat-btn:hover:not(:disabled) {
+  background: #fff5f2;
+  transform: translateY(-1px);
+}
+
+.ad-stat-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .ad-stat svg {
   color: #ff6b35;
+  transition: color 0.2s, fill 0.2s;
+}
+
+.ad-stat-btn-liked {
+  color: #ff6b35;
+}
+
+.ad-stat-btn-liked svg {
+  color: #ff6b35;
+  fill: #ff6b35;
+}
+
+.ads-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 1000;
+}
+
+.ads-modal {
+  width: 100%;
+  max-width: 680px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: 85vh;
+}
+
+.ads-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #eee;
+}
+
+.ads-modal-title {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #2c3e50;
+}
+
+.ads-modal-close {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid #eee;
+  background: white;
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  color: #7f8c8d;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.ads-modal-close:hover {
+  background: #f7f7f7;
+  transform: translateY(-1px);
+}
+
+.ads-modal-error {
+  margin: 1rem 1.25rem 0;
+  padding: 0.75rem 1rem;
+  background: #fee;
+  border: 1px solid #fcc;
+  border-radius: 12px;
+  color: #c33;
+  white-space: pre-line;
+}
+
+.ads-modal-body {
+  padding: 1rem 1.25rem;
+  overflow: auto;
+  flex: 1;
+}
+
+.ads-modal-loading,
+.ads-modal-empty {
+  text-align: center;
+  color: #7f8c8d;
+  padding: 2rem 0;
+}
+
+.ads-comments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.ads-comment {
+  background: #fafafa;
+  border: 1px solid #eee;
+  border-radius: 14px;
+  padding: 0.9rem 1rem;
+}
+
+.ads-comment-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.4rem;
+}
+
+.ads-comment-author {
+  font-weight: 700;
+  color: #2c3e50;
+}
+
+.ads-comment-time {
+  font-size: 0.8rem;
+  color: #95a5a6;
+}
+
+.ads-comment-text {
+  color: #2c3e50;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+.ads-comment-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.6rem;
+}
+
+.ads-comment-action {
+  background: transparent;
+  border: none;
+  color: #ff6b35;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0.25rem 0.35rem;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.ads-comment-action:hover:not(:disabled) {
+  background: #fff5f2;
+}
+
+.ads-comment-action:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.ads-reply-box {
+  margin-top: 0.75rem;
+  background: white;
+  border: 1px solid #eee;
+  border-radius: 14px;
+  padding: 0.75rem;
+}
+
+.ads-reply-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.ads-replies {
+  margin-top: 0.75rem;
+  padding-left: 0.75rem;
+  border-left: 3px solid #ffe2d8;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.ads-reply {
+  background: white;
+  border: 1px solid #eee;
+  border-radius: 14px;
+  padding: 0.75rem;
+}
+
+.ads-modal-footer {
+  border-top: 1px solid #eee;
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.ads-textarea {
+  width: 100%;
+  border: 1px solid #e6e6e6;
+  border-radius: 12px;
+  padding: 0.75rem 0.9rem;
+  font-size: 0.95rem;
+  resize: vertical;
+  outline: none;
+}
+
+.ads-textarea:focus {
+  border-color: #ff8c42;
+  box-shadow: 0 0 0 3px rgba(255, 140, 66, 0.15);
+}
+
+.ads-btn-primary {
+  padding: 0.8rem 1.1rem;
+  background: #ff6b35;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s, opacity 0.2s;
+}
+
+.ads-btn-primary:hover:not(:disabled) {
+  background: #ff8c42;
+  transform: translateY(-1px);
+}
+
+.ads-btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.ads-btn-secondary {
+  padding: 0.8rem 1.1rem;
+  background: white;
+  color: #2c3e50;
+  border: 1px solid #e6e6e6;
+  border-radius: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.ads-btn-secondary:hover {
+  background: #f7f7f7;
+  transform: translateY(-1px);
 }
 
 .ad-view-seller-btn {
@@ -350,6 +620,9 @@
 
   .ad-card {
     padding: 1rem;
+    width: 100%;
+    max-height: none;
+    overflow: visible;
   }
 
   .ad-header {
@@ -360,6 +633,14 @@
 
   .ad-expires-badge {
     align-self: flex-start;
+  }
+
+  .ad-image-container {
+    max-height: 200px;
+  }
+
+  .ad-image {
+    max-height: 200px;
   }
 
   .ad-footer {

@@ -4,6 +4,7 @@ import { apiService } from '../services/api';
 import { useCart } from '../context/CartContext';
 import { formatPrice } from '../utils/formatPrice';
 import { getImageUrl, handleImageError } from '../utils/imageUtils';
+import { Loader } from '../components/Loader';
 import './ProductDetail.css';
 
 export function ProductDetail() {
@@ -51,7 +52,11 @@ export function ProductDetail() {
     : [];
 
   if (loading) {
-    return <div className="loading-container">Loading product...</div>;
+    return (
+      <div className="loading-container">
+        <Loader />
+      </div>
+    );
   }
 
   if (!product) {
@@ -81,6 +86,12 @@ export function ProductDetail() {
     product.seller_id ??
     product.seller?.id ??
     0;
+
+  const sellerImage =
+    product.seller_image ??
+    product.seller?.shop_image ??
+    product.seller?.image ??
+    undefined;
 
   return (
     <div className="product-detail">
@@ -123,9 +134,19 @@ export function ProductDetail() {
 
           <div className="seller-cta-banner">
             <div className="seller-cta-left">
-              <div className="seller-cta-avatar">
-                <span>{sellerName?.[0]?.toUpperCase() || 'S'}</span>
-              </div>
+              {sellerImage ? (
+                <img
+                  src={getImageUrl(sellerImage)}
+                  alt={sellerName}
+                  className="seller-cta-avatar"
+                  onError={handleImageError}
+                  loading="lazy"
+                />
+              ) : (
+                <div className="seller-cta-avatar">
+                  <span>{sellerName?.[0]?.toUpperCase() || 'S'}</span>
+                </div>
+              )}
               <div className="seller-cta-text">
                 <div className="seller-cta-name-row">
                   <span className="seller-cta-label">Sold by</span>

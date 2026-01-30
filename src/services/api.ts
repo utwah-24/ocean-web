@@ -31,12 +31,25 @@ export interface CartItem {
   quantity: number;
 }
 
+export interface CommentItem {
+  id: number;
+  user_id?: number;
+  user_name?: string;
+  comment?: string;
+  message?: string;
+  likes_count?: number;
+  is_liked?: boolean;
+  created_at?: string;
+  replies?: CommentItem[];
+}
+
 function normalizeProduct(raw: any): Product {
   const nowIso = new Date().toISOString();
 
   const sellerName =
     raw?.seller_name ??
     raw?.sellerName ??
+    (typeof raw?.seller === 'string' ? raw.seller : undefined) ??
     raw?.seller?.shop_name ??
     raw?.seller?.shopName ??
     raw?.seller?.name ??
@@ -72,6 +85,22 @@ function normalizeProduct(raw: any): Product {
 class ApiService {
   private getAuthToken(): string | null {
     return localStorage.getItem('token');
+  }
+
+  private truncateForErrorBody(body: string, max = 300): string {
+    const cleaned = body.replace(/\s+/g, ' ').trim();
+    if (cleaned.length <= max) return cleaned;
+    return `${cleaned.slice(0, max)}…`;
+  }
+
+  private isNotFoundError(err: unknown): boolean {
+    const msg = err instanceof Error ? err.message : String(err);
+    return (
+      /\b404\b/.test(msg) ||
+      /not found/i.test(msg) ||
+      /could not be found/i.test(msg) ||
+      /route .* could not be found/i.test(msg)
+    );
   }
 
   private async request<T>(
@@ -174,12 +203,22 @@ class ApiService {
         throw new Error(errorMessage);
       }
 
+      // 204 No Content is valid JSON-less success
+      if (response.status === 204) {
+        return {} as T;
+      }
+
       const contentType = response.headers.get('content-type');
       if (contentType && contentType.includes('application/json')) {
         return response.json();
       } else {
-        // If response is not JSON, return empty object for type safety
-        return {} as T;
+        // Don’t silently swallow HTML/text responses; it hides real server issues.
+        const text = await response.text();
+        const preview = this.truncateForErrorBody(text);
+        throw new Error(
+          `Expected JSON but got ${contentType || 'unknown content-type'} from ${url}.\n` +
+          `Response preview: ${preview || '(empty)'}`
+        );
       }
     } catch (error) {
       // Handle network errors or other fetch errors
@@ -305,6 +344,36 @@ class ApiService {
 
     const query = queryParams.toString();
     return this.request(`/products${query ? `?${query}` : ''}`);
+  }
+
+  // Get Seller Products
+  async getSellerProducts(
+    sellerId: number,
+    params?: {
+      page?: number;
+      category_id?: number;
+      subcategory_id?: number;
+    }
+  ): Promise<{
+    data: Product[];
+  }> {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.category_id) queryParams.append('category_id', params.category_id.toString());
+    if (params?.subcategory_id) queryParams.append('subcategory_id', params.subcategory_id.toString());
+
+    const query = queryParams.toString();
+    const raw = await this.request<any>(`/sellers/${sellerId}/products${query ? `?${query}` : ''}`);
+
+    // Handle response structure: { message: "...", products: [...] }
+    const productsArray = raw?.products || raw?.data || [];
+    const normalized = Array.isArray(productsArray)
+      ? productsArray.map((p: any) => normalizeProduct(p))
+      : [];
+
+    return {
+      data: normalized,
+    };
   }
 
   // Personalized Products
@@ -518,6 +587,7 @@ class ApiService {
       comments_count: number;
       is_liked: boolean;
       created_at: string;
+      product_id?: number;
     }>;
     current_page: number;
     last_page: number;
@@ -528,18 +598,211 @@ class ApiService {
     if (params?.user_id) queryParams.append('user_id', params.user_id.toString());
 
     const query = queryParams.toString();
-    const raw = await this.request<any>(`/expiring-posts/feed${query ? `?${query}` : ''}`);
+    // Use /expiring-posts to fetch all available expiring posts (not the personalized feed endpoint).
+    const raw = await this.request<any>(`/expiring-posts${query ? `?${query}` : ''}`);
+
+    // Handle nested data structure from API
+    const container = raw?.data || raw;
+    const postsData = container?.data || container || [];
+    const userId = params?.user_id;
+
+    const list = Array.isArray(postsData) ? postsData : [];
+    const normalized = list
+      .filter(Boolean)
+      .map((p: any) => {
+        const sellerName =
+          p?.seller_name ??
+          p?.seller?.shop_name ??
+          p?.seller?.shopName ??
+          p?.seller?.name ??
+          p?.seller?.user?.name ??
+          'Ocean Seller';
+
+        // Check for is_liked in multiple possible locations
+        // Also check if likes array contains current user (if user_id param was provided)
+        let isLiked = false;
+        
+        if (typeof p?.is_liked === 'boolean') {
+          isLiked = p.is_liked;
+        } else if (typeof p?.liked === 'boolean') {
+          isLiked = p.liked;
+        } else if (Array.isArray(p?.likes) && userId) {
+          // Check if current user is in the likes array
+          isLiked = p.likes.some((like: any) => {
+            const likeUserId = like?.user_id ?? like?.userId ?? like?.id ?? like?.user?.id;
+            return likeUserId && Number(likeUserId) === Number(userId);
+          });
+        }
+
+        return {
+          id: Number(p?.id ?? 0),
+          seller_id: Number(p?.seller_id ?? p?.sellerId ?? p?.seller?.id ?? 0),
+          seller_name: String(sellerName || 'Ocean Seller'),
+          seller_image: p?.seller_image ?? p?.seller?.shop_image ?? p?.seller?.image ?? undefined,
+          content: String(p?.content ?? ''),
+          image: p?.image ?? p?.media?.image ?? undefined,
+          expires_at: String(p?.expires_at ?? p?.expiresAt ?? ''),
+          likes_count: Number(p?.likes_count ?? p?.likes_count ?? (Array.isArray(p?.likes) ? p.likes.length : 0) ?? 0),
+          comments_count: Number(p?.comments_count ?? p?.comments_count ?? (Array.isArray(p?.comments) ? p.comments.length : 0) ?? 0),
+          is_liked: isLiked,
+          created_at: String(p?.created_at ?? p?.createdAt ?? new Date().toISOString()),
+          product_id: p?.product_id ? Number(p.product_id) : undefined,
+        };
+      });
+
+    return {
+      data: normalized,
+      current_page: container?.current_page || raw?.current_page || 1,
+      last_page: container?.last_page || raw?.last_page || 1,
+      next_page_url: container?.next_page_url || raw?.next_page_url,
+    };
+  }
+
+  async getExpiringPostsBySeller(
+    sellerId: number,
+    params?: { page?: number }
+  ): Promise<{
+    data: Array<{
+      id: number;
+      seller_id: number;
+      seller_name?: string;
+      seller_image?: string;
+      title?: string;
+      content: string;
+      image?: string;
+      expires_at: string;
+      likes_count: number;
+      comments_count: number;
+      is_liked?: boolean;
+      created_at: string;
+    }>;
+    current_page: number;
+    last_page: number;
+    next_page_url?: string;
+  }> {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append('page', params.page.toString());
+
+    const query = queryParams.toString();
+    const raw = await this.request<any>(
+      `/expiring-posts/seller/${sellerId}${query ? `?${query}` : ''}`
+    );
 
     // Handle nested data structure from API
     const container = raw?.data || raw;
     const postsData = container?.data || container || [];
 
+    const list = Array.isArray(postsData) ? postsData : [];
+    const normalized = list
+      .filter(Boolean)
+      .map((p: any) => {
+        const sellerName =
+          p?.seller_name ??
+          p?.seller?.shop_name ??
+          p?.seller?.shopName ??
+          p?.seller?.name ??
+          p?.seller?.user?.name ??
+          'Ocean Seller';
+
+        return {
+          id: Number(p?.id ?? 0),
+          seller_id: Number(p?.seller_id ?? p?.sellerId ?? p?.seller?.id ?? 0),
+          seller_name: sellerName ? String(sellerName) : undefined,
+          seller_image: p?.seller_image ?? p?.seller?.shop_image ?? p?.seller?.image ?? undefined,
+          title: p?.title ? String(p.title) : undefined,
+          content: String(p?.content ?? ''),
+          image: p?.image ?? p?.media?.image ?? undefined,
+          expires_at: String(p?.expires_at ?? p?.expiresAt ?? ''),
+          likes_count: Number(p?.likes_count ?? p?.likes ?? 0),
+          comments_count: Number(p?.comments_count ?? p?.comments ?? 0),
+          is_liked: p?.is_liked ?? p?.liked ?? false,
+          created_at: String(p?.created_at ?? p?.createdAt ?? new Date().toISOString()),
+        };
+      });
+
     return {
-      data: Array.isArray(postsData) ? postsData : [],
+      data: normalized,
       current_page: container?.current_page || raw?.current_page || 1,
       last_page: container?.last_page || raw?.last_page || 1,
       next_page_url: container?.next_page_url || raw?.next_page_url,
     };
+  }
+
+  async toggleLikeExpiringPost(postId: number): Promise<{
+    status?: string;
+    is_liked?: boolean;
+    likes_count?: number;
+    message?: string;
+  }> {
+    return this.request(`/expiring-posts/${postId}/like`, {
+      method: 'POST',
+    });
+  }
+
+  async getExpiringPostComments(postId: number, productId?: number): Promise<{ data: CommentItem[] }> {
+    // Use product_id if available, otherwise use postId
+    const idToUse = productId || postId;
+    // Use the products comments endpoint as specified
+    return await this.request(`/products/${idToUse}/comments`);
+  }
+
+  async addExpiringPostComment(postId: number, payload: { user_id?: number; comment: string }) {
+    try {
+      return await this.request(`/expiring-posts/${postId}/comments`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    } catch (e) {
+      if (!this.isNotFoundError(e)) throw e;
+      return this.request(`/products/${postId}/comments`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    }
+  }
+
+  async replyToComment(commentId: number, payload: { user_id?: number; comment: string }) {
+    return this.request(`/comments/${commentId}/reply`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async toggleLikeComment(commentId: number) {
+    // Swagger screenshot shows /toggle-like; docs sometimes use /like.
+    try {
+      return await this.request(`/comments/${commentId}/toggle-like`, { method: 'POST' });
+    } catch (e) {
+      if (!this.isNotFoundError(e)) throw e;
+      return this.request(`/comments/${commentId}/like`, { method: 'POST' });
+    }
+  }
+
+  // Seller Follow/Unfollow
+  async toggleFollowSeller(sellerId: number, userId?: number): Promise<{
+    status?: string;
+    is_following?: boolean;
+    message?: string;
+  }> {
+    const payload: any = {};
+    if (userId) {
+      payload.user_id = userId;
+    }
+    return this.request(`/sellers/${sellerId}/follow`, {
+      method: 'POST',
+      body: Object.keys(payload).length > 0 ? JSON.stringify(payload) : undefined,
+    });
+  }
+
+  async getSellerFollowStatus(sellerId: number, userId?: number): Promise<{
+    is_following?: boolean;
+    is_private?: boolean;
+    follow_request_pending?: boolean;
+  }> {
+    const queryParams = new URLSearchParams();
+    if (userId) queryParams.append('user_id', userId.toString());
+    const query = queryParams.toString();
+    return this.request(`/sellers/${sellerId}/follow-status${query ? `?${query}` : ''}`);
   }
 }
 

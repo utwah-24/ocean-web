@@ -35,6 +35,8 @@
   font-weight: 800;
   box-shadow: 0 8px 18px rgba(15, 23, 42, 0.45);
   margin-top: -48px;
+  object-fit: cover;
+  border: 3px solid white;
 }
 
 .seller-main-info {
@@ -84,18 +86,47 @@
 }
 
 .seller-follow-btn {
+  font-size: 17px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  border-radius: 999px;
+  background: transparent;
+  padding: 0;
+  transition: all 0.2s ease;
+}
+
+.seller-follow-btn .button-top {
+  display: block;
+  box-sizing: border-box;
+  border: 2px solid #ff6b35;
+  border-radius: 999px;
   padding: 0.8rem 1.8rem;
   background: linear-gradient(120deg, #ff6b35, #ff8c42);
   color: white;
-  border: none;
-  border-radius: 999px;
-  font-weight: 600;
-  cursor: pointer;
-  box-shadow: 0 10px 20px rgba(255, 107, 53, 0.4);
+  transition: all 0.2s ease;
 }
 
-.seller-follow-btn:hover {
-  transform: translateY(-1px);
+.seller-follow-btn:hover:not(:disabled) .button-top {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+}
+
+.seller-follow-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.seller-follow-btn.following .button-top {
+  background: white;
+  color: #ff6b35;
+  border: 2px solid #ff6b35;
+}
+
+.seller-follow-btn.following:hover:not(:disabled) .button-top {
+  background: #fff5f2;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.2);
 }
 
 .seller-tabs {
@@ -169,6 +200,53 @@
   padding: 3rem 1rem;
   text-align: center;
   color: #6b7280;
+}
+
+.seller-description {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.seller-description-content {
+  max-width: 800px;
+}
+
+.seller-info {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.seller-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+}
+
+.seller-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.info-label {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  color: #9ca3af;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+
+.info-value {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #111827;
 }
 
 @media (max-width: 768px) {

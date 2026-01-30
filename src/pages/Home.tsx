@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { apiService } from '../services/api';
 import type { Product, Category } from '../services/api';
 import { ProductCard } from '../components/ProductCard';
+import { Loader } from '../components/Loader';
 import './Home.css';
 
 export function Home() {
@@ -123,7 +124,7 @@ export function Home() {
         <h2 className="section-title">Personalized for You</h2>
 
         {loading && products.length === 0 ? (
-          <div className="loading">Loading products...</div>
+          <Loader />
         ) : products.length === 0 ? (
           <div className="no-products">No products found. Try a different search or category.</div>
         ) : (

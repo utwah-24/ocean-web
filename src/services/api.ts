@@ -219,12 +219,22 @@ class ApiService {
 
   // Authentication
   async login(countryCode: string, phone: string, password: string) {
+    // Backend expects country_code like "🇹🇿TZ" (flag + ISO2).
+    // Accept inputs like "TZ" / "🇹🇿TZ" and normalize to flag+ISO2.
+    const iso2 = countryCode.replace(/[^A-Za-z]/g, '').toUpperCase();
+    const normalizedCountryCode = iso2.length === 2 ? `${isoToFlagEmoji(iso2)}${iso2}` : countryCode;
+
     // Clean phone number - remove any spaces, dashes, or special characters
     const cleanPhone = phone.replace(/\D/g, '');
+    // Normalize: API expects phone without a leading 0 (e.g. 0712... -> 712...)
+    let normalizedPhone = cleanPhone;
+    if (normalizedPhone.length > 1) {
+      normalizedPhone = normalizedPhone.replace(/^0+/, '');
+    }
     
     const requestBody = {
-      country_code: countryCode,
-      phone: cleanPhone,
+      country_code: normalizedCountryCode,
+      phone: normalizedPhone,
       password: password,
     };
 
@@ -534,4 +544,12 @@ class ApiService {
 }
 
 export const apiService = new ApiService();
+
+function isoToFlagEmoji(iso2: string) {
+  // "TZ" -> 🇹🇿 using Regional Indicator Symbols
+  if (!/^[A-Z]{2}$/.test(iso2)) return '';
+  const A = 0x1f1e6; // Regional indicator symbol letter A
+  const codePoints = [...iso2].map((ch) => A + (ch.charCodeAt(0) - 65));
+  return String.fromCodePoint(...codePoints);
+}
 

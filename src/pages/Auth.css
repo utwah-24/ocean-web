@@ -80,6 +80,72 @@
   position: relative;
 }
 
+.country-dropdown-root {
+  width: 100%;
+}
+
+.country-dropdown-button {
+  width: 100%;
+  text-align: left;
+  border: 1px solid #e0e0e0;
+}
+
+.country-dropdown-button-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.country-flag {
+  border-radius: 2px;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.country-dropdown-menu {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+}
+
+.country-dropdown-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 0.875rem;
+  background: white;
+  border: none;
+  cursor: pointer;
+  color: #333;
+  font-size: 0.95rem;
+}
+
+.country-dropdown-item:hover {
+  background: #fff3ed;
+}
+
+.country-dropdown-item.is-selected {
+  background: #fff3ed;
+}
+
+.country-dial {
+  font-weight: 600;
+}
+
+.country-name {
+  margin-left: auto;
+  color: #666;
+  font-size: 0.9rem;
+}
+
 .country-code-select {
   padding: 0.875rem 1rem;
   border: 1px solid #e0e0e0;

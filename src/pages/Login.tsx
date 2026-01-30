@@ -2,10 +2,13 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { apiService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { CountryDropdown } from '../components/CountryDropdown';
 import './Auth.css';
 
 export function Login() {
-  const [countryCode, setCountryCode] = useState('+255');
+  // Backend expects country_code in the form "🇹🇿TZ" (flag + ISO2)
+  // We keep ISO2 in state and let the API client normalize it.
+  const [countryCode, setCountryCode] = useState('TZ');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -20,9 +23,6 @@ export function Login() {
     setLoading(true);
 
     try {
-      // Remove the + sign from country code for API call
-      const codeWithoutPlus = countryCode.replace('+', '');
-      
       // Validate inputs
       if (!phone.trim()) {
         setError('Please enter your phone number');
@@ -36,12 +36,12 @@ export function Login() {
       }
 
       console.log('[Login] Attempting login with:', {
-        countryCode: codeWithoutPlus,
+        countryCode,
         phone: phone.trim(),
         phoneLength: phone.trim().length,
       });
 
-      const response = await apiService.login(codeWithoutPlus, phone.trim(), password);
+      const response = await apiService.login(countryCode, phone.trim(), password);
       
       if (response && response.token && response.user) {
         login(response.token, response.user);
@@ -54,6 +54,16 @@ export function Login() {
       
       // Parse error message to provide more helpful feedback
       let errorMessage = err.message || 'Login failed. Please check your credentials.';
+
+      // If backend returned field-level validation (e.g. "country_code: ..."),
+      // show it directly instead of replacing with generic messaging.
+      const looksLikeFieldValidation =
+        typeof errorMessage === 'string' &&
+        /(^|\s)(country_code|phone|password)\s*:\s*/i.test(errorMessage);
+      if (looksLikeFieldValidation) {
+        setError(errorMessage);
+        return;
+      }
       
       // Check for common error patterns
       if (errorMessage.toLowerCase().includes('invalid data') || 
@@ -101,19 +111,12 @@ export function Login() {
         <form onSubmit={handleSubmit} className="login-form">
           {/* Phone Number Input */}
           <div className="phone-input-group">
-            <div className="country-code-dropdown">
-              <select
-                value={countryCode}
-                onChange={(e) => setCountryCode(e.target.value)}
-                className="country-code-select"
-              >
-                <option value="+255">+255</option>
-                <option value="+1">+1</option>
-                <option value="+44">+44</option>
-                <option value="+91">+91</option>
-                <option value="+86">+86</option>
-              </select>
-            </div>
+            <CountryDropdown
+              value={countryCode}
+              valueType="iso2"
+              onChange={setCountryCode}
+              ariaLabel="Select country code"
+            />
             <input
               type="tel"
               value={phone}

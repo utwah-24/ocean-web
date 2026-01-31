@@ -7,6 +7,7 @@ import { ProductCard } from '../components/ProductCard';
 import { getImageUrl } from '../utils/imageUtils';
 import { Loader } from '../components/Loader';
 import './SellerProfile.css';
+import './MyProfile.css';
 
 interface WorkingHour {
   day_of_week: string;
@@ -131,6 +132,19 @@ export function MyProfile() {
           // Fast path: we have seller_id, fetch directly
           console.log('[MyProfile] Fetching seller data using seller_id:', sellerIdFromUser);
           sellerData = await apiService.getSeller(sellerIdFromUser);
+          
+          // CRITICAL: Verify this seller actually belongs to the logged-in user
+          if (sellerData.user_id !== userId) {
+            console.warn('[MyProfile] Cached seller_id does not match user_id. Seller user_id:', sellerData.user_id, 'Logged in user_id:', userId);
+            console.log('[MyProfile] Searching for correct seller...');
+            // Clear the incorrect seller_id from user object
+            const updatedUser = { ...user };
+            delete (updatedUser as any).seller_id;
+            delete (updatedUser as any).sellerId;
+            localStorage.setItem('user', JSON.stringify(updatedUser));
+            // Fall through to search logic
+            throw new Error('Seller ID mismatch - searching for correct seller');
+          }
         } else {
           // Slower path: try user.id as seller_id directly first (common pattern)
           // This avoids fetching all sellers
@@ -156,9 +170,23 @@ export function MyProfile() {
               throw new Error('No seller profile found for this user');
             }
             
-            console.log('[MyProfile] Found seller:', mySeller.id);
+            console.log('[MyProfile] Found seller:', mySeller.id, 'for user_id:', userId);
             sellerData = await apiService.getSeller(mySeller.id);
+            
+            // Double-check the seller belongs to this user
+            if (sellerData.user_id !== userId) {
+              throw new Error(`Seller ${mySeller.id} does not belong to user ${userId}`);
+            }
+            
+            // Update user object with correct seller_id for future use
+            const updatedUser = { ...user, seller_id: mySeller.id };
+            localStorage.setItem('user', JSON.stringify(updatedUser));
           }
+        }
+        
+        // Final verification before setting state
+        if (sellerData.user_id !== userId) {
+          throw new Error(`Fetched seller does not belong to logged-in user. Expected user_id: ${userId}, got: ${sellerData.user_id}`);
         }
 
         console.log('[MyProfile] Seller data received');
@@ -192,20 +220,82 @@ export function MyProfile() {
     // Clear cache
     localStorage.removeItem(cacheKey);
     
-    // Fetch fresh data
+    // Fetch fresh data using the same logic as initial fetch
     try {
-      const sellerIdFromUser = (user as any).seller_id || (user as any).sellerId || user.id;
-      const data = await apiService.getSeller(sellerIdFromUser);
+      const sellerIdFromUser = (user as any).seller_id || (user as any).sellerId || (user as any).seller?.id;
       
+      let sellerData: SellerData;
+
+      if (sellerIdFromUser) {
+        // Fast path: we have seller_id, fetch directly
+        console.log('[MyProfile] Refresh: Fetching seller data using seller_id:', sellerIdFromUser);
+        sellerData = await apiService.getSeller(sellerIdFromUser);
+        
+        // CRITICAL: Verify this seller belongs to the logged-in user
+        if (sellerData.user_id !== user.id) {
+          console.warn('[MyProfile] Refresh: Cached seller_id does not match user_id. Seller user_id:', sellerData.user_id, 'Logged in user_id:', user.id);
+          console.log('[MyProfile] Refresh: Searching for correct seller...');
+          // Clear the incorrect seller_id from user object
+          const updatedUser = { ...user };
+          delete (updatedUser as any).seller_id;
+          delete (updatedUser as any).sellerId;
+          localStorage.setItem('user', JSON.stringify(updatedUser));
+          // Fall through to search logic
+          throw new Error('Seller ID mismatch - searching for correct seller');
+        }
+      } else {
+        // Try user.id as seller_id directly first
+        console.log('[MyProfile] Refresh: Trying user.id as seller_id:', user.id);
+        try {
+          sellerData = await apiService.getSeller(user.id);
+          
+          // Verify this seller actually belongs to the logged-in user
+          if (sellerData.user_id !== user.id) {
+            console.warn('[MyProfile] Refresh: Seller found but user_id mismatch, searching...');
+            throw new Error('User ID mismatch');
+          }
+        } catch (directErr) {
+          // Last resort: search through sellers
+          console.log('[MyProfile] Refresh: Direct lookup failed, searching by user_id');
+          const sellersResponse = await apiService.getAllSellers({ page: 1 });
+          const sellers = sellersResponse.data || [];
+          const mySeller = sellers.find((s: any) => 
+            s.user_id === user.id || s.userId === user.id
+          );
+          
+          if (!mySeller) {
+            throw new Error('No seller profile found for this user');
+          }
+          
+          console.log('[MyProfile] Refresh: Found seller:', mySeller.id, 'for user_id:', user.id);
+          sellerData = await apiService.getSeller(mySeller.id);
+          
+          // Double-check the seller belongs to this user
+          if (sellerData.user_id !== user.id) {
+            throw new Error(`Seller ${mySeller.id} does not belong to user ${user.id}`);
+          }
+          
+          // Update user object with correct seller_id for future use
+          const updatedUser = { ...user, seller_id: mySeller.id };
+          localStorage.setItem('user', JSON.stringify(updatedUser));
+        }
+      }
+      
+      // Final verification before setting state
+      if (sellerData.user_id !== user.id) {
+        throw new Error(`Fetched seller does not belong to logged-in user. Expected user_id: ${user.id}, got: ${sellerData.user_id}`);
+      }
+
       // Update cache
       localStorage.setItem(cacheKey, JSON.stringify({
-        data: data,
+        data: sellerData,
         timestamp: Date.now()
       }));
       
-      setSellerData(data);
+      setSellerData(sellerData);
     } catch (err) {
       console.error('[MyProfile] Error refreshing data:', err);
+      setError(err instanceof Error ? err.message : 'Failed to refresh seller data');
     } finally {
       setIsRefreshing(false);
     }
@@ -559,7 +649,19 @@ export function MyProfile() {
           ) : (
             <div className="seller-products-grid">
               {sellerData.products.map((product) => (
-                <ProductCard key={product.id} product={product} />
+                <div key={product.id} className="product-card-wrapper">
+                  <ProductCard product={product} />
+                  <button
+                    onClick={() => navigate(`/edit-product/${product.id}`)}
+                    className="product-edit-btn"
+                    title="Edit product"
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                  </button>
+                </div>
               ))}
             </div>
           )}
@@ -762,6 +864,18 @@ export function MyProfile() {
           </div>
         </div>
       )}
+
+      {/* Floating Action Button */}
+      <button
+        onClick={() => navigate('/add-product')}
+        className="fab-add-product"
+        title="Add New Product"
+      >
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+      </button>
     </div>
     </>
   );

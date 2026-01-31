@@ -10,6 +10,8 @@ import { Checkout } from './pages/Checkout';
 import { Categories } from './pages/Categories';
 import { SellerProfile } from './pages/SellerProfile';
 import { MyProfile } from './pages/MyProfile';
+import { AddProduct } from './pages/AddProduct';
+import { EditProduct } from './pages/EditProduct';
 import { Network } from './pages/Network';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
@@ -31,6 +33,8 @@ function AppContent() {
           <Route path="/cart" element={<Cart />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/my-profile" element={<MyProfile />} />
+          <Route path="/add-product" element={<AddProduct />} />
+          <Route path="/edit-product/:id" element={<EditProduct />} />
           <Route path="/sellers/:id" element={<SellerProfile />} />
           <Route path="/categories" element={<Categories />} />
           <Route path="/network" element={<Network />} />

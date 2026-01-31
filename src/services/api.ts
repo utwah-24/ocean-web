@@ -546,6 +546,16 @@ class ApiService {
     return this.request(`/subcategories${query}`);
   }
 
+  async getProductSubcategories(categoryId: number): Promise<Array<{
+    id: number;
+    category_id: number;
+    name: string;
+    image?: string;
+    created_at: string;
+  }>> {
+    return this.request(`/product-subcategories?category_id=${categoryId}`);
+  }
+
   // Orders
   async createOrder(orderData: {
     order_items: Array<{
@@ -961,6 +971,189 @@ class ApiService {
     
     const query = queryParams.toString();
     return this.request(`/following/sellers${query ? `?${query}` : ''}`);
+  }
+
+  // Add custom product
+  async addCustomProduct(productData: FormData): Promise<{
+    message: string;
+    product: {
+      id: number;
+      name: string;
+      description: string;
+      price: number;
+      product_type: string;
+      status: string;
+      image: string;
+      additional_images: string[];
+      plane_id: number;
+      business_idea_id: number;
+      subsidiary_plane_id: number;
+      country_id: number;
+      category_id: number;
+      subcategory_id: number;
+      created_at: string;
+      updated_at: string;
+    };
+  }> {
+    const token = this.getAuthToken();
+    const headers: Record<string, string> = {
+      'Accept': 'application/json',
+    };
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const url = `${API_BASE_URL}/seller/add-custom-product`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: productData,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      let errorMessage = `API Error: ${response.status} ${response.statusText}`;
+      try {
+        const errorJson = JSON.parse(errorText);
+        if (errorJson.errors && typeof errorJson.errors === 'object') {
+          const validationErrors = Object.entries(errorJson.errors)
+            .map(([field, messages]: [string, any]) => {
+              const msg = Array.isArray(messages) ? messages.join(', ') : messages;
+              return `${field}: ${msg}`;
+            })
+            .join('; ');
+          errorMessage = validationErrors || errorJson.message || errorJson.error || errorMessage;
+        } else {
+          errorMessage = errorJson.message || errorJson.error || errorMessage;
+        }
+      } catch {
+        errorMessage = errorText || errorMessage;
+      }
+      throw new Error(errorMessage);
+    }
+
+    return response.json();
+  }
+
+  // Update custom product details
+  async updateCustomProductDetails(productId: number, productData: {
+    name?: string;
+    description?: string;
+    price?: string;
+    category_id?: number;
+    subcategory_id?: number;
+  }): Promise<{
+    message: string;
+    product: any;
+  }> {
+    const token = this.getAuthToken();
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    return this.request(`/seller/update-custom-product-details/${productId}`, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify(productData),
+    });
+  }
+
+  // Update custom product images
+  async updateCustomProductImages(productId: number, imageData: FormData): Promise<{
+    message: string;
+    product: any;
+  }> {
+    const token = this.getAuthToken();
+    const headers: Record<string, string> = {
+      'Accept': 'application/json',
+    };
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const url = `${API_BASE_URL}/seller/update-custom-product-images/${productId}`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: imageData,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      let errorMessage = `API Error: ${response.status} ${response.statusText}`;
+      try {
+        const errorJson = JSON.parse(errorText);
+        if (errorJson.errors && typeof errorJson.errors === 'object') {
+          const validationErrors = Object.entries(errorJson.errors)
+            .map(([field, messages]: [string, any]) => {
+              const msg = Array.isArray(messages) ? messages.join(', ') : messages;
+              return `${field}: ${msg}`;
+            })
+            .join('; ');
+          errorMessage = validationErrors || errorJson.message || errorJson.error || errorMessage;
+        } else {
+          errorMessage = errorJson.message || errorJson.error || errorMessage;
+        }
+      } catch {
+        errorMessage = errorText || errorMessage;
+      }
+      throw new Error(errorMessage);
+    }
+
+    return response.json();
+  }
+
+  // Delete custom product
+  async deleteCustomProduct(productId: number): Promise<{
+    message: string;
+  }> {
+    const token = this.getAuthToken();
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const url = `${API_BASE_URL}/seller/delete-custom-product`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ product_id: productId }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      let errorMessage = `API Error: ${response.status} ${response.statusText}`;
+      try {
+        const errorJson = JSON.parse(errorText);
+        if (errorJson.errors && typeof errorJson.errors === 'object') {
+          const validationErrors = Object.entries(errorJson.errors)
+            .map(([field, messages]: [string, any]) => {
+              const msg = Array.isArray(messages) ? messages.join(', ') : messages;
+              return `${field}: ${msg}`;
+            })
+            .join('; ');
+          errorMessage = validationErrors || errorJson.message || errorJson.error || errorMessage;
+        } else {
+          errorMessage = errorJson.message || errorJson.error || errorMessage;
+        }
+      } catch {
+        errorMessage = errorText || errorMessage;
+      }
+      throw new Error(errorMessage);
+    }
+
+    return response.json();
   }
 }
 

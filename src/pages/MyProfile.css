@@ -1,0 +1,136 @@
+/* Floating Action Button */
+.fab-add-product {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  width: 64px;
+  height: 64px;
+  background: linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(255, 107, 53, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  z-index: 1000;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.fab-add-product:hover {
+  transform: translateY(-4px) scale(1.05);
+  box-shadow: 0 12px 32px rgba(255, 107, 53, 0.5);
+}
+
+.fab-add-product:active {
+  transform: translateY(-2px) scale(1.02);
+}
+
+.fab-add-product svg {
+  width: 28px;
+  height: 28px;
+  stroke-width: 2.5;
+}
+
+/* Pulse animation on page load */
+@keyframes fabPulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 8px 24px rgba(255, 107, 53, 0.4);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 12px 32px rgba(255, 107, 53, 0.6);
+  }
+}
+
+.fab-add-product {
+  animation: fabPulse 2s ease-in-out 2;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .fab-add-product {
+    bottom: 1.5rem;
+    right: 1.5rem;
+    width: 56px;
+    height: 56px;
+  }
+
+  .fab-add-product svg {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .fab-add-product {
+    bottom: 1rem;
+    right: 1rem;
+    width: 52px;
+    height: 52px;
+  }
+
+  .fab-add-product svg {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+/* Product Edit Button */
+.product-card-wrapper {
+  position: relative;
+}
+
+.product-edit-btn {
+  position: absolute;
+  bottom: 1rem;
+  right: 1rem;
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.4);
+  transition: all 0.3s ease;
+  z-index: 10;
+  color: white;
+}
+
+.product-edit-btn:hover {
+  background: linear-gradient(135deg, #ff8c42 0%, #ff6b35 100%);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 6px 16px rgba(255, 107, 53, 0.5);
+}
+
+.product-edit-btn:active {
+  transform: translateY(0) scale(1);
+}
+
+.product-edit-btn svg {
+  width: 22px;
+  height: 22px;
+  stroke-width: 2.5;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .product-edit-btn {
+    width: 44px;
+    height: 44px;
+    bottom: 0.75rem;
+    right: 0.75rem;
+  }
+
+  .product-edit-btn svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+

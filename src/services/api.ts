@@ -862,6 +862,11 @@ class ApiService {
     return this.request(`/sellers/${sellerId}/follow-status${query ? `?${query}` : ''}`);
   }
 
+  // Get seller by ID
+  async getSeller(sellerId: number): Promise<any> {
+    return this.request(`/sellers/${sellerId}`);
+  }
+
   // Get all sellers
   async getAllSellers(params?: {
     page?: number;

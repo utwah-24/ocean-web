@@ -7,7 +7,7 @@ import './Header.css';
 
 export function Header() {
   const { getTotalItems } = useCart();
-  const { isAuthenticated, user, logout } = useAuth();
+  const { isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -56,11 +56,15 @@ export function Header() {
             <>
               <Link 
                 to="/my-profile" 
-                className="user-name"
+                className="my-shop-btn"
                 onClick={closeMobileMenu}
                 title="View my seller profile"
               >
-                Hi, {user?.name}
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                  <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                </svg>
+                <span>My Shop</span>
               </Link>
               <button onClick={handleLogout} className="logout-btn">Logout</button>
             </>
@@ -95,6 +99,18 @@ export function Header() {
 
       {/* Mobile Menu */}
       <div className={`mobile-menu ${isMobileMenuOpen ? 'mobile-menu-open' : ''}`}>
+        {/* My Shop Card */}
+        {isAuthenticated && (
+          <Link to="/my-profile" className="mobile-shop-card" onClick={closeMobileMenu}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+              <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+            <span>My Shop</span>
+          </Link>
+        )}
+
+        {/* Navigation Links */}
         <nav className="mobile-nav">
           <Link to="/" className="mobile-nav-link" onClick={closeMobileMenu}>Home</Link>
           <Link to="/products" className="mobile-nav-link" onClick={closeMobileMenu}>Products</Link>

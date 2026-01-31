@@ -95,19 +95,64 @@
   height: 24px;
 }
 
-.user-name {
-  color: white;
-  font-weight: 500;
+/* Cool Minimalistic My Shop Button */
+.my-shop-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: white;
+  color: #ff6b35;
   text-decoration: none;
-  padding: 0.5rem 0.75rem;
-  border-radius: 6px;
-  transition: background-color 0.2s;
+  font-weight: 600;
+  font-size: 0.9rem;
+  border-radius: 20px;
   white-space: nowrap;
   cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
 }
 
-.user-name:hover {
-  background-color: rgba(255, 255, 255, 0.2);
+.my-shop-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(255, 107, 53, 0.1) 0%, rgba(255, 140, 66, 0.1) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.my-shop-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(255, 107, 53, 0.25);
+}
+
+.my-shop-btn:hover::before {
+  opacity: 1;
+}
+
+.my-shop-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(255, 107, 53, 0.2);
+}
+
+.my-shop-btn svg {
+  flex-shrink: 0;
+  transition: transform 0.3s ease;
+}
+
+.my-shop-btn:hover svg {
+  transform: scale(1.1);
+}
+
+.my-shop-btn span {
+  position: relative;
+  z-index: 1;
 }
 
 .cart-link {
@@ -208,6 +253,17 @@
     padding: 0.4rem 0.8rem;
     font-size: 1.4rem;
   }
+
+  .my-shop-btn {
+    padding: 0.45rem 0.85rem;
+    font-size: 0.85rem;
+    gap: 0.4rem;
+  }
+
+  .my-shop-btn svg {
+    width: 16px;
+    height: 16px;
+  }
 }
 
 /* Mobile Menu */
@@ -218,18 +274,56 @@
   max-height: 0;
   overflow: hidden;
   transition: max-height 0.3s ease-out;
+  padding: 0;
 }
 
 .mobile-menu-open {
-  max-height: 500px;
+  max-height: 600px;
   transition: max-height 0.3s ease-in;
+  padding: 1rem;
 }
 
+/* My Shop Card - Minimalistic Design */
+.mobile-shop-card {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 8px;
+  padding: 0.875rem 1rem;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.75rem;
+  text-decoration: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+  margin-bottom: 1rem;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.mobile-shop-card:hover {
+  transform: translateX(4px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  background: white;
+}
+
+.mobile-shop-card svg {
+  flex-shrink: 0;
+  color: #ff6b35;
+}
+
+.mobile-shop-card span {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #2d3748;
+  white-space: nowrap;
+}
+
+/* Mobile Navigation Links */
 .mobile-nav {
   display: flex;
   flex-direction: column;
-  padding: 1rem;
   gap: 0.5rem;
+  align-items: stretch;
 }
 
 .mobile-nav-link {
@@ -238,12 +332,17 @@
   font-weight: 500;
   padding: 0.75rem 1rem;
   border-radius: 6px;
-  transition: background-color 0.2s;
-  text-align: center;
+  transition: all 0.2s;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.1);
+  border-left: 3px solid transparent;
 }
 
-.mobile-nav-link:hover {
+.mobile-nav-link:hover,
+.mobile-nav-link:active {
   background-color: rgba(255, 255, 255, 0.2);
+  border-left-color: white;
+  transform: translateX(4px);
 }
 
 @media (max-width: 768px) {
@@ -261,7 +360,7 @@
     display: flex;
   }
 
-  .user-name {
+  .my-shop-btn {
     display: none;
   }
 
@@ -299,6 +398,25 @@
 
   .register-btn {
     display: none;
+  }
+
+  .mobile-menu-open {
+    padding: 0.75rem;
+  }
+
+  .mobile-shop-card {
+    padding: 0.75rem 0.875rem;
+    gap: 0.625rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .mobile-shop-card svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .mobile-shop-card span {
+    font-size: 0.875rem;
   }
 
   .mobile-nav-link {

@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import { Link } from 'react-router-dom';
 import { apiService } from '../services/api';
 import { Loader } from '../components/Loader';
-import { getImageUrl, handleImageError } from '../utils/imageUtils';
+import { getImageUrl } from '../utils/imageUtils';
 import './Network.css';
 
 interface Seller {
@@ -16,12 +16,125 @@ interface Seller {
   is_following?: boolean;
 }
 
+// Check if image is a default/placeholder
+const isDefaultImage = (imageUrl: string | undefined): boolean => {
+  if (!imageUrl) return true;
+  const defaultPatterns = [
+    'default.png',
+    'default.jpg',
+    'placeholder',
+    'no-image',
+    'avatar-placeholder'
+  ];
+  return defaultPatterns.some(pattern => imageUrl.toLowerCase().includes(pattern));
+};
+
+// Memoized Seller Card Component for better performance
+const SellerCard = memo(({ seller }: { seller: Seller }) => {
+  const hasValidImage = seller.shop_image && !isDefaultImage(seller.shop_image);
+  
+  return (
+    <Link
+      to={`/sellers/${seller.id}`}
+      className="seller-card"
+    >
+      <div className="seller-card-header">
+        {hasValidImage ? (
+          <div className="seller-card-avatar">
+            <img
+              src={getImageUrl(seller.shop_image)}
+              alt={seller.shop_name}
+              onError={(e) => {
+                const target = e.currentTarget;
+                const parent = target.parentElement;
+                if (parent) {
+                  parent.className = 'seller-card-avatar default-icon';
+                  parent.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width: 55%; height: 55%;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`;
+                }
+              }}
+              loading="lazy"
+            />
+          </div>
+        ) : (
+          <div className="seller-card-avatar default-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ width: '55%', height: '55%' }}>
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+          </div>
+        )}
+      <div className="seller-card-info">
+        <h3 className="seller-card-name">{seller.shop_name || 'Unknown Seller'}</h3>
+        {seller.location && (
+          <p className="seller-card-location">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+              <circle cx="12" cy="10" r="3"></circle>
+            </svg>
+            {seller.location}
+          </p>
+        )}
+      </div>
+    </div>
+
+    {seller.about && (
+      <p className="seller-card-about">
+        {seller.about.length > 100
+          ? `${seller.about.substring(0, 100)}...`
+          : seller.about}
+      </p>
+    )}
+
+    <div className="seller-card-stats">
+      <div className="seller-stat">
+        <span className="stat-value">
+          {seller.products_count || 0}
+        </span>
+        <span className="stat-label">Products</span>
+      </div>
+      <div className="seller-stat">
+        <span className="stat-value">
+          {seller.followers_count || 0}
+        </span>
+        <span className="stat-label">Followers</span>
+      </div>
+    </div>
+
+    <div className="seller-card-footer">
+      <span className="view-profile-btn">View Profile</span>
+    </div>
+  </Link>
+  );
+});
+
+SellerCard.displayName = 'SellerCard';
+
+// Custom debounce hook
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
+
 export function Network() {
   const [sellers, setSellers] = useState<Seller[]>([]);
+  const [allSellers, setAllSellers] = useState<Seller[]>([]); // Store all sellers for client-side filtering
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [isSearching, setIsSearching] = useState(false);
+  
+  // Debounce search query to reduce re-renders
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   useEffect(() => {
     loadSellers();
@@ -37,6 +150,7 @@ export function Network() {
       const sellersData = response?.data || (response as any)?.sellers || response || [];
       const normalizedSellers = Array.isArray(sellersData) ? sellersData : [];
       
+      setAllSellers(normalizedSellers); // Store all sellers
       setSellers(normalizedSellers);
       
       // Fetch follower counts for all sellers
@@ -99,47 +213,34 @@ export function Network() {
     }
   };
 
-  const handleSearch = async (e: React.FormEvent) => {
+  const handleSearch = useCallback((e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!searchQuery.trim()) {
-      loadSellers();
-      return;
-    }
+    // Search is now handled by client-side filtering
+    // This just prevents form submission
+  }, []);
 
-    try {
-      setIsSearching(true);
-      setError(null);
-      
-      const response = await apiService.globalSearch(searchQuery.trim(), {
-        type: 'all'
-      });
-      
-      console.log('[Network] Search response:', response);
-      
-      // Normalize the response - API returns: { success: true, data: { sellers: [...], products: [], meta: {...} } }
-      const responseData = (response as any)?.data || response;
-      const sellersData = responseData?.sellers || [];
-      const normalizedSellers = Array.isArray(sellersData) ? sellersData : [];
-      
-      console.log('[Network] Sellers found:', normalizedSellers.length);
-      
-      setSellers(normalizedSellers);
-      
-      // Fetch follower counts for search results
-      loadFollowerCounts(normalizedSellers);
-    } catch (err) {
-      console.error('Failed to search sellers:', err);
-      setError('Failed to search. Please try again.');
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
-  const handleClearSearch = () => {
+  const handleClearSearch = useCallback(() => {
     setSearchQuery('');
-    loadSellers();
-  };
+  }, []);
+
+  // Client-side filtering with useMemo for performance
+  const filteredSellers = useMemo(() => {
+    if (!debouncedSearchQuery.trim()) {
+      return allSellers;
+    }
+
+    const query = debouncedSearchQuery.toLowerCase().trim();
+    return allSellers.filter(seller => 
+      seller.shop_name?.toLowerCase().includes(query) ||
+      seller.location?.toLowerCase().includes(query) ||
+      seller.about?.toLowerCase().includes(query)
+    );
+  }, [allSellers, debouncedSearchQuery]);
+
+  // Update sellers when filtered results change
+  useEffect(() => {
+    setSellers(filteredSellers);
+  }, [filteredSellers]);
 
   if (loading) {
     return (
@@ -208,80 +309,20 @@ export function Network() {
             <button 
               type="submit" 
               className="network-search-btn"
-              disabled={isSearching}
             >
-              {isSearching ? 'Searching...' : 'Search'}
+              Search
             </button>
           </form>
         </div>
 
         {sellers.length === 0 ? (
           <div className="network-empty">
-            <p>No sellers found.</p>
+            <p>{searchQuery ? 'No sellers found matching your search.' : 'No sellers found.'}</p>
           </div>
         ) : (
           <div className="sellers-grid">
             {sellers.map((seller) => (
-              <Link
-                key={seller.id}
-                to={`/sellers/${seller.id}`}
-                className="seller-card"
-              >
-                <div className="seller-card-header">
-                  <div className="seller-card-avatar">
-                    {seller.shop_image ? (
-                      <img
-                        src={getImageUrl(seller.shop_image)}
-                        alt={seller.shop_name}
-                        onError={handleImageError}
-                      />
-                    ) : (
-                      <div className="seller-avatar-placeholder">
-                        {seller.shop_name?.charAt(0).toUpperCase() || 'S'}
-                      </div>
-                    )}
-                  </div>
-                  <div className="seller-card-info">
-                    <h3 className="seller-card-name">{seller.shop_name || 'Unknown Seller'}</h3>
-                    {seller.location && (
-                      <p className="seller-card-location">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                          <circle cx="12" cy="10" r="3"></circle>
-                        </svg>
-                        {seller.location}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {seller.about && (
-                  <p className="seller-card-about">
-                    {seller.about.length > 100
-                      ? `${seller.about.substring(0, 100)}...`
-                      : seller.about}
-                  </p>
-                )}
-
-                <div className="seller-card-stats">
-                  <div className="seller-stat">
-                    <span className="stat-value">
-                      {seller.products_count || 0}
-                    </span>
-                    <span className="stat-label">Products</span>
-                  </div>
-                  <div className="seller-stat">
-                    <span className="stat-value">
-                      {seller.followers_count || 0}
-                    </span>
-                    <span className="stat-label">Followers</span>
-                  </div>
-                </div>
-
-                <div className="seller-card-footer">
-                  <span className="view-profile-btn">View Profile</span>
-                </div>
-              </Link>
+              <SellerCard key={seller.id} seller={seller} />
             ))}
           </div>
         )}

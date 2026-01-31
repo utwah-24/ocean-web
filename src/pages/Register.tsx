@@ -48,12 +48,28 @@ export function Register() {
     setLoading(true);
 
     try {
+      // Step 1: Register the user
       const registrationData = {
         ...formData,
         country_code: formData.country_code.replace('+', ''),
       };
-      const response = await apiService.register(registrationData);
-      login(response.token, response.user);
+      
+      await apiService.register(registrationData);
+      
+      // Step 2: Automatically log the user in after successful registration
+      // The login API expects country_code with flag emoji (e.g., "🇹🇿TZ")
+      const countryCode = formData.country_code.replace('+', ''); // Remove the + sign
+      
+      const loginResponse = await apiService.login(
+        countryCode,
+        formData.phone,
+        formData.password
+      );
+      
+      // Step 3: Store token and user data
+      login(loginResponse.token, loginResponse.user);
+      
+      // Step 4: Navigate to home
       navigate('/');
     } catch (err: any) {
       setError(err.message || 'Registration failed. Please try again.');

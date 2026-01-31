@@ -27,6 +27,38 @@
   margin: 0 0 2rem 0;
 }
 
+/* Tabs */
+.network-tabs {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  margin-bottom: 2rem;
+  border-bottom: 2px solid #e0e0e0;
+  padding-bottom: 0;
+}
+
+.network-tab {
+  background: transparent;
+  border: none;
+  padding: 1rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #7f8c8d;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  border-bottom: 3px solid transparent;
+}
+
+.network-tab:hover {
+  color: #ff6b35;
+}
+
+.network-tab.active {
+  color: #ff6b35;
+  border-bottom-color: #ff6b35;
+}
+
 .network-search-form {
   display: flex;
   gap: 1rem;
@@ -325,6 +357,18 @@
 
   .network-subtitle {
     font-size: 1rem;
+  }
+
+  .network-tabs {
+    gap: 0.25rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .network-tab {
+    padding: 0.875rem 1.5rem;
+    font-size: 0.95rem;
+    white-space: nowrap;
   }
 
   .network-search-form {

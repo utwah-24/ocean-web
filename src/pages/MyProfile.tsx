@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/api';
@@ -75,7 +75,6 @@ export function MyProfile() {
   const [activeTab, setActiveTab] = useState<'products' | 'description' | 'info' | 'hours' | 'orders'>('products');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [shareMenuOpen, setShareMenuOpen] = useState(false);
-  const shareDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!isAuthenticated || !user) {
@@ -184,25 +183,6 @@ export function MyProfile() {
     fetchSellerData();
   }, [isAuthenticated, user, navigate]);
 
-  // Close share menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (shareDropdownRef.current && !shareDropdownRef.current.contains(event.target as Node)) {
-        setShareMenuOpen(false);
-      }
-    };
-
-    if (shareMenuOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-      document.addEventListener('touchstart', handleClickOutside as any);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('touchstart', handleClickOutside as any);
-    };
-  }, [shareMenuOpen]);
-
   const handleRefresh = async () => {
     if (!user || isRefreshing) return;
     
@@ -229,6 +209,31 @@ export function MyProfile() {
     } finally {
       setIsRefreshing(false);
     }
+  };
+
+  const handleShare = (platform: string) => {
+    const url = window.location.href;
+    const text = `Check out ${sellerData?.shop_name} on Ocean Web!`;
+    
+    switch (platform) {
+      case 'whatsapp':
+        window.open(`https://wa.me/?text=${encodeURIComponent(`${text}\n${url}`)}`, '_blank');
+        break;
+      case 'snapchat':
+        window.open(`https://www.snapchat.com/scan?attachmentUrl=${encodeURIComponent(url)}`, '_blank');
+        break;
+      case 'instagram':
+        // Instagram doesn't have direct web sharing, so we'll copy to clipboard
+        navigator.clipboard.writeText(`${text}\n${url}`).then(() => {
+          alert('Link copied! You can now paste it on Instagram.');
+        });
+        break;
+    }
+    setShareMenuOpen(false);
+  };
+
+  const toggleShareMenu = () => {
+    setShareMenuOpen(!shareMenuOpen);
   };
 
   if (loading) {
@@ -273,62 +278,6 @@ export function MyProfile() {
     } catch {
       return time;
     }
-  };
-
-  const handleShare = async (platform: 'whatsapp' | 'snapchat' | 'instagram') => {
-    // Close the menu after selecting an option
-    setShareMenuOpen(false);
-    
-    const profileUrl = window.location.href;
-    const sellerName = sellerData?.shop_name || 'My Shop';
-    const shareText = `Check out ${sellerName} on Ocean! 🛍️\n\nHome of modern & stylish products.\n\n${profileUrl}`;
-
-    // Check if Web Share API is available
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: `${sellerName} - Ocean`,
-          text: shareText,
-          url: profileUrl
-        });
-        return;
-      } catch (error) {
-        if ((error as Error).name === 'AbortError') {
-          return;
-        }
-        console.log('Native share failed, using fallback:', error);
-      }
-    }
-
-    // Platform-specific fallbacks
-    switch (platform) {
-      case 'whatsapp':
-        const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
-        window.open(whatsappUrl, '_blank');
-        break;
-      
-      case 'snapchat':
-        try {
-          await navigator.clipboard.writeText(shareText);
-          alert('✅ Link copied to clipboard!\n\nYou can now paste it in Snapchat.');
-        } catch {
-          alert(`Share this link on Snapchat:\n\n${profileUrl}`);
-        }
-        break;
-      
-      case 'instagram':
-        try {
-          await navigator.clipboard.writeText(shareText);
-          alert('✅ Link copied to clipboard!\n\nYou can now paste it in Instagram.');
-        } catch {
-          alert(`Share this link on Instagram:\n\n${profileUrl}`);
-        }
-        break;
-    }
-  };
-
-  const toggleShareMenu = () => {
-    setShareMenuOpen(!shareMenuOpen);
   };
 
   // Check if image is a default/placeholder
@@ -501,45 +450,60 @@ export function MyProfile() {
               )}
             </div>
           </div>
-          
           <div className="seller-cta-right">
-            <div className="seller-action-buttons">
-              <div className="seller-share-dropdown" ref={shareDropdownRef}>
-                <button 
-                  className="seller-share-btn" 
-                  title="Share profile"
-                  onClick={toggleShareMenu}
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="20" height="20">
+            <div className="seller-share-container">
+              <button
+                className="seller-share-btn"
+                onClick={toggleShareMenu}
+                onMouseEnter={() => setShareMenuOpen(true)}
+                onMouseLeave={() => setShareMenuOpen(false)}
+              >
+                <span className="button-top">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="18" cy="5" r="3"></circle>
                     <circle cx="6" cy="12" r="3"></circle>
                     <circle cx="18" cy="19" r="3"></circle>
                     <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
                     <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
                   </svg>
-                  <span>Share</span>
-                </button>
-                <div className={`seller-share-menu ${shareMenuOpen ? 'open' : ''}`}>
-                  <button onClick={() => handleShare('whatsapp')} className="share-menu-item share-whatsapp">
-                    <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+                  Share
+                </span>
+              </button>
+              {shareMenuOpen && (
+                <div 
+                  className="share-dropdown"
+                  onMouseEnter={() => setShareMenuOpen(true)}
+                  onMouseLeave={() => setShareMenuOpen(false)}
+                >
+                  <button
+                    className="share-dropdown-item whatsapp"
+                    onClick={() => handleShare('whatsapp')}
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
                     </svg>
                     WhatsApp
                   </button>
-                  <button onClick={() => handleShare('snapchat')} className="share-menu-item share-snapchat">
-                    <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
-                      <path d="M12.206.793c.99 0 4.347.276 5.93 3.821.529 1.193.403 3.219.299 4.847l-.003.06c-.012.18-.022.345-.03.51.075.045.203.09.401.09.3-.016.659-.12 1.033-.301.165-.088.344-.104.464-.104.182 0 .359.029.509.09.45.149.734.479.734.838.015.449-.39.839-1.213 1.168-.089.029-.209.075-.344.119-.45.135-1.139.36-1.333.81-.09.224-.061.524.12.868.304.604 1.134 1.468 2.39 2.495.36.299.509.524.509.733 0 .164-.12.314-.346.434-.254.134-.947.409-1.746.689-.27.105-.418.211-.418.314 0 .045.03.104.105.21l.015.015c.314.52.47 1.094.43 1.563-.045.509-.314 1.003-.838 1.093-1.005.194-1.62-.469-2.326-1.273-.839-.959-1.798-2.041-3.532-2.041-.314 0-.629.03-.928.074-.045 0-.075.03-.12.044l-.015.015c-.031.135-.136.345-.405.689-.509.629-1.109 1.124-1.914 1.123h-.015c-.809 0-1.424-.479-1.94-1.093-.364-.434-.853-1.483-.853-1.844 0-.254.165-.404.375-.404.09 0 .195.03.315.09.524.329.793.494 1.093.494.152 0 .315-.074.509-.238.434-.359.569-1.048.584-1.393 0-.104-.03-.164-.104-.209C6.778 16.48 6.28 15.98 5.84 15.42c-.449-.599-.569-1.348-.299-1.933.254-.524.734-.823 1.274-.823.09 0 .18.015.27.03l.015.015c.914.195 1.559.39 2.039.39.42 0 .704-.18.918-.39.18-.179.3-.404.359-.629.06-.18.075-.374.045-.554-.031-.18-.106-.359-.226-.509-.511-.658-1.245-1.05-2.01-1.124-.718-.06-1.348.151-1.827.421-.285.165-.479.255-.629.255-.149 0-.27-.06-.374-.195-.376-.464-.421-1.124-.15-1.654.301-.555.809-.975 1.439-1.125.631-.15 1.229-.03 1.708.346.18.136.331.255.465.345.195.12.391.18.601.18.435 0 .855-.255 1.229-.72.465-.58.676-1.395.571-2.205-.074-.555-.301-.959-.674-1.169-.3-.164-.645-.239-1.02-.239-.51 0-1.05.15-1.545.405-.421.194-.764.434-1.019.674-.255.239-.421.495-.524.779-.075.195-.15.375-.254.539-.241.405-.584.734-1.02.914-.435.18-.914.255-1.394.195-.404-.06-.749-.225-1.019-.524-.27-.301-.405-.675-.405-1.108 0-.495.181-1.005.526-1.529.286-.435.675-.795 1.139-1.079.465-.285 1.005-.51 1.575-.659.57-.15 1.154-.24 1.709-.24z"/>
+                  <button
+                    className="share-dropdown-item snapchat"
+                    onClick={() => handleShare('snapchat')}
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12.206.793c.99 0 4.347.276 5.93 3.821.529 1.193.403 3.219.299 4.847l-.003.06c-.012.18-.022.345-.03.51.075.045.203.09.401.09.3-.016.659-.12 1.033-.301.165-.088.344-.104.464-.104.182 0 .359.029.509.09.45.149.734.479.734.838.015.449-.39.839-1.213 1.168-.089.029-.209.075-.344.119-.45.135-1.139.36-1.333.81-.09.224-.061.524.12.868l.015.015c.06.136 1.526 3.475 4.791 4.014.255.044.435.27.42.509 0 .075-.015.149-.045.225-.24.569-1.273.988-3.146 1.271-.059.091-.12.375-.164.57-.029.179-.074.36-.134.553-.076.271-.27.405-.555.405h-.03c-.135 0-.313-.031-.538-.074-.36-.075-.765-.135-1.273-.135-.3 0-.599.015-.913.074-.6.104-1.123.464-1.723.884-.853.599-1.826 1.288-3.294 1.288-.06 0-.119-.015-.18-.015h-.149c-1.468 0-2.427-.675-3.279-1.288-.599-.42-1.107-.779-1.707-.884-.314-.045-.629-.074-.928-.074-.54 0-.958.089-1.272.149-.211.043-.391.074-.54.074-.374 0-.523-.224-.583-.42-.061-.192-.09-.389-.135-.567-.046-.181-.105-.494-.166-.57-1.918-.222-2.95-.642-3.189-1.226-.031-.063-.052-.15-.055-.225-.015-.243.165-.465.42-.509 3.264-.54 4.73-3.879 4.791-4.02l.016-.029c.18-.345.224-.645.119-.869-.195-.434-.884-.658-1.332-.809-.121-.029-.24-.074-.346-.119-1.107-.435-1.257-.93-1.197-1.273.09-.479.674-.793 1.168-.793.146 0 .27.029.383.074.42.194.789.3 1.104.3.234 0 .384-.06.465-.105-.046-.435-.105-1.124-.119-1.814-.015-.735-.015-1.829.121-2.639 1.04-3.146 3.445-3.821 5.948-3.821h.06z"/>
                     </svg>
                     Snapchat
                   </button>
-                  <button onClick={() => handleShare('instagram')} className="share-menu-item share-instagram">
-                    <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
-                      <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                  <button
+                    className="share-dropdown-item instagram"
+                    onClick={() => handleShare('instagram')}
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 0C8.74 0 8.333.015 7.053.072 5.775.132 4.905.333 4.14.63c-.789.306-1.459.717-2.126 1.384S.935 3.35.63 4.14C.333 4.905.131 5.775.072 7.053.012 8.333 0 8.74 0 12s.015 3.667.072 4.947c.06 1.277.261 2.148.558 2.913.306.788.717 1.459 1.384 2.126.667.666 1.336 1.079 2.126 1.384.766.296 1.636.499 2.913.558C8.333 23.988 8.74 24 12 24s3.667-.015 4.947-.072c1.277-.06 2.148-.262 2.913-.558.788-.306 1.459-.718 2.126-1.384.666-.667 1.079-1.335 1.384-2.126.296-.765.499-1.636.558-2.913.06-1.28.072-1.687.072-4.947s-.015-3.667-.072-4.947c-.06-1.277-.262-2.149-.558-2.913-.306-.789-.718-1.459-1.384-2.126C21.319 1.347 20.651.935 19.86.63c-.765-.297-1.636-.499-2.913-.558C15.667.012 15.26 0 12 0zm0 2.16c3.203 0 3.585.016 4.85.071 1.17.055 1.805.249 2.227.415.562.217.96.477 1.382.896.419.42.679.819.896 1.381.164.422.36 1.057.413 2.227.057 1.266.07 1.646.07 4.85s-.015 3.585-.074 4.85c-.061 1.17-.256 1.805-.421 2.227-.224.562-.479.96-.899 1.382-.419.419-.824.679-1.38.896-.42.164-1.065.36-2.235.413-1.274.057-1.649.07-4.859.07-3.211 0-3.586-.015-4.859-.074-1.171-.061-1.816-.256-2.236-.421-.569-.224-.96-.479-1.379-.899-.421-.419-.69-.824-.9-1.38-.165-.42-.359-1.065-.42-2.235-.045-1.26-.061-1.649-.061-4.844 0-3.196.016-3.586.061-4.861.061-1.17.255-1.814.42-2.234.21-.57.479-.96.9-1.381.419-.419.81-.689 1.379-.898.42-.166 1.051-.361 2.221-.421 1.275-.045 1.65-.06 4.859-.06l.045.03zm0 3.678c-3.405 0-6.162 2.76-6.162 6.162 0 3.405 2.76 6.162 6.162 6.162 3.405 0 6.162-2.76 6.162-6.162 0-3.405-2.76-6.162-6.162-6.162zM12 16c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4zm7.846-10.405c0 .795-.646 1.44-1.44 1.44-.795 0-1.44-.646-1.44-1.44 0-.794.646-1.439 1.44-1.439.793-.001 1.44.645 1.44 1.439z"/>
                     </svg>
                     Instagram
                   </button>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </div>

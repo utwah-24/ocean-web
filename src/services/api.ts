@@ -311,11 +311,16 @@ class ApiService {
     password_confirmation: string;
   }) {
     return this.request<{
-      status: string;
       message: string;
-      user: any;
-      token: string;
-    }>('/auth/register', {
+      user: {
+        id: number;
+        email: string;
+        phone: string;
+        name: string;
+        country: string;
+        role: string;
+      };
+    }>('/register', {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -927,6 +932,35 @@ class ApiService {
     
     const query = queryParams.toString();
     return this.request(`/sellers/${sellerId}/followers${query ? `?${query}` : ''}`);
+  }
+
+  // Get sellers that the user is following
+  async getFollowingSellers(params?: {
+    page?: number;
+  }): Promise<{
+    success: boolean;
+    total_following: number;
+    following_sellers: {
+      current_page: number;
+      data: Array<{
+        id: number;
+        shop_name: string;
+        shop_image?: string;
+        location?: string;
+        about?: string;
+        products_count?: number;
+        followers_count?: number;
+        created_at: string;
+      }>;
+      total: number;
+      per_page: number;
+    };
+  }> {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append('page', params.page.toString());
+    
+    const query = queryParams.toString();
+    return this.request(`/following/sellers${query ? `?${query}` : ''}`);
   }
 }
 

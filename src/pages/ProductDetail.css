@@ -225,92 +225,89 @@
   color: #555;
 }
 
-.product-share-section {
+/* Share Section */
+.share-section {
   padding: 1.5rem;
   background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
   border-radius: 12px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid #e0e0e0;
 }
 
-.share-title {
-  margin: 0 0 0.5rem 0;
-  font-size: 1.1rem;
-  font-weight: 600;
+.share-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.share-icon {
+  font-size: 1.5rem;
+}
+
+.share-section h3 {
+  font-size: 1.2rem;
   color: #2c3e50;
-}
-
-.share-description {
-  margin: 0 0 1rem 0;
-  font-size: 0.9rem;
-  color: #6b7280;
+  margin: 0;
 }
 
 .share-buttons {
   display: flex;
+  flex-direction: column;
   gap: 0.75rem;
-  flex-wrap: wrap;
 }
 
 .share-btn {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.25rem;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
   border: none;
   border-radius: 10px;
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
   color: white;
-  flex: 1;
-  min-width: 130px;
-  justify-content: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .share-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
 }
 
 .share-btn:active {
   transform: translateY(0);
 }
 
-.share-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
-}
-
 .share-btn svg {
   flex-shrink: 0;
 }
 
-.share-whatsapp {
+.whatsapp-btn {
   background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
 }
 
-.share-whatsapp:hover {
-  background: linear-gradient(135deg, #2de46f 0%, #13a085 100%);
+.whatsapp-btn:hover {
+  background: linear-gradient(135deg, #128C7E 0%, #075E54 100%);
 }
 
-.share-snapchat {
-  background: linear-gradient(135deg, #FFFC00 0%, #FDD800 100%);
-  color: #000;
+.snapchat-btn {
+  background: linear-gradient(135deg, #FFFC00 0%, #FFF700 100%);
+  color: #000000;
 }
 
-.share-snapchat:hover {
-  background: linear-gradient(135deg, #fff94d 0%, #ffe11a 100%);
+.snapchat-btn:hover {
+  background: linear-gradient(135deg, #FFF700 0%, #F5EC00 100%);
 }
 
-.share-instagram {
-  background: linear-gradient(135deg, #833AB4 0%, #E1306C 50%, #FD1D1D 100%);
+.instagram-btn {
+  background: linear-gradient(135deg, #E1306C 0%, #C13584 70%, #833AB4 100%);
 }
 
-.share-instagram:hover {
-  background: linear-gradient(135deg, #9b4fd1 0%, #f0467f 50%, #ff3737 100%);
+.instagram-btn:hover {
+  background: linear-gradient(135deg, #C13584 0%, #833AB4 70%, #5851DB 100%);
 }
 
 .product-actions {
@@ -442,7 +439,6 @@
   background: #ff8c42;
 }
 
-/* Tablet */
 @media (max-width: 968px) {
   .product-detail-container {
     grid-template-columns: 1fr;
@@ -458,8 +454,8 @@
   }
 }
 
-/* Mobile */
-@media (max-width: 768px) {
+/* Small phones and mobile devices */
+@media (max-width: 576px) {
   .product-detail {
     padding: 1rem;
   }
@@ -471,7 +467,7 @@
   }
 
   .product-detail-container {
-    padding: 1.25rem;
+    padding: 1rem;
     gap: 1.5rem;
     border-radius: 12px;
   }
@@ -481,120 +477,29 @@
     line-height: 1.3;
   }
 
+  .product-price-large {
+    font-size: 1.8rem;
+  }
+
+  /* Seller CTA Banner - Stack on small screens */
   .seller-cta-banner {
     flex-direction: column;
-    align-items: stretch;
+    align-items: flex-start;
     gap: 1rem;
     padding: 1rem;
   }
 
   .seller-cta-left {
-    flex: 1;
-  }
-
-  .seller-cta-button {
     width: 100%;
-    text-align: center;
-    padding: 0.75rem 1.5rem;
-    font-size: 0.95rem;
-  }
-
-  .product-price-large {
-    font-size: 1.75rem;
-  }
-
-  .product-description h3 {
-    font-size: 1.1rem;
-  }
-
-  .product-description p {
-    font-size: 0.95rem;
-  }
-
-  .product-actions {
-    gap: 1.25rem;
-  }
-
-  .product-action-buttons {
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-
-  .add-to-cart-large,
-  .view-cart-large {
-    width: 100%;
-    padding: 1rem 1.5rem;
-    font-size: 1rem;
-  }
-
-  .main-image {
-    aspect-ratio: 1;
-  }
-
-  .thumbnail {
-    min-width: 70px;
-    width: 70px;
-    height: 70px;
-  }
-
-  .product-share-section {
-    padding: 1.25rem;
-  }
-
-  .share-title {
-    font-size: 1rem;
-  }
-
-  .share-buttons {
-    gap: 0.625rem;
-  }
-
-  .share-btn {
-    min-width: 110px;
-    padding: 0.7rem 1rem;
-    font-size: 0.9rem;
-  }
-}
-
-/* Small Mobile */
-@media (max-width: 480px) {
-  .product-detail {
-    padding: 0.75rem;
-  }
-
-  .back-button {
-    padding: 0.5rem 1rem;
-    font-size: 0.85rem;
-    margin-bottom: 0.75rem;
-  }
-
-  .product-detail-container {
-    padding: 1rem;
-    gap: 1.25rem;
-    border-radius: 8px;
-  }
-
-  .product-title {
-    font-size: 1.3rem;
-  }
-
-  .seller-cta-banner {
-    padding: 0.875rem;
-    gap: 0.875rem;
   }
 
   .seller-cta-avatar {
     width: 40px;
     height: 40px;
-    font-size: 0.9rem;
-  }
-
-  .seller-cta-text {
-    gap: 0.05rem;
   }
 
   .seller-cta-label {
-    font-size: 0.7rem;
+    font-size: 0.75rem;
   }
 
   .seller-cta-name {
@@ -606,45 +511,69 @@
   }
 
   .seller-cta-button {
-    padding: 0.7rem 1.25rem;
-    font-size: 0.9rem;
+    width: 100%;
+    text-align: center;
+    padding: 0.7rem 1.5rem;
   }
 
-  .product-price-large {
-    font-size: 1.5rem;
+  /* Thumbnail images - smaller on mobile */
+  .thumbnail {
+    min-width: 60px;
+    width: 60px;
+    height: 60px;
   }
 
-  .product-info-detail {
-    gap: 1.25rem;
-  }
-
+  /* Product description */
   .product-description {
-    padding-top: 1.25rem;
+    padding-top: 1rem;
   }
 
   .product-description h3 {
-    font-size: 1rem;
+    font-size: 1.1rem;
     margin-bottom: 0.75rem;
   }
 
   .product-description p {
-    font-size: 0.9rem;
+    font-size: 0.95rem;
     line-height: 1.5;
   }
 
+  /* Seller location */
   .seller-location {
-    padding: 0.875rem;
+    padding: 0.75rem;
     font-size: 0.9rem;
   }
 
+  /* Share section */
+  .share-section {
+    padding: 1rem;
+  }
+
+  .share-section h3 {
+    font-size: 1.1rem;
+  }
+
+  .share-header {
+    margin-bottom: 1rem;
+  }
+
+  .share-buttons {
+    gap: 0.6rem;
+  }
+
+  .share-btn {
+    padding: 0.85rem 1.2rem;
+    font-size: 0.95rem;
+  }
+
+  /* Product actions */
   .product-actions {
     gap: 1rem;
-    padding-top: 1.25rem;
+    padding-top: 1rem;
   }
 
   .quantity-selector {
-    flex-direction: column;
-    align-items: flex-start;
+    flex-wrap: wrap;
     gap: 0.75rem;
   }
 
@@ -664,85 +593,78 @@
     font-size: 1rem;
   }
 
+  /* Action buttons - stack on very small screens */
   .product-action-buttons {
-    gap: 0.625rem;
+    flex-direction: column;
+    gap: 0.75rem;
   }
 
   .add-to-cart-large,
   .view-cart-large {
-    padding: 0.875rem 1.25rem;
-    font-size: 0.95rem;
-    border-radius: 10px;
-  }
-
-  .main-image {
-    border-radius: 8px;
-  }
-
-  .thumbnail {
-    min-width: 60px;
-    width: 60px;
-    height: 60px;
-    border-radius: 6px;
-  }
-
-  .thumbnail-images {
-    gap: 0.5rem;
-  }
-
-  .product-share-section {
-    padding: 1rem;
-  }
-
-  .share-title {
-    font-size: 0.95rem;
-    margin-bottom: 0.75rem;
-  }
-
-  .share-buttons {
-    flex-direction: column;
-    gap: 0.625rem;
-  }
-
-  .share-btn {
-    min-width: 100%;
-    padding: 0.7rem 1rem;
-    font-size: 0.9rem;
+    width: 100%;
+    padding: 1rem 1.5rem;
+    font-size: 1rem;
   }
 }
 
-/* Extra Small Mobile */
-@media (max-width: 360px) {
+/* Extra small phones */
+@media (max-width: 375px) {
   .product-detail {
-    padding: 0.5rem;
+    padding: 0.75rem;
   }
 
   .product-detail-container {
-    padding: 0.875rem;
+    padding: 0.75rem;
     gap: 1rem;
   }
 
   .product-title {
-    font-size: 1.2rem;
-  }
-
-  .seller-cta-avatar {
-    width: 36px;
-    height: 36px;
+    font-size: 1.3rem;
   }
 
   .product-price-large {
-    font-size: 1.35rem;
+    font-size: 1.6rem;
+  }
+
+  .seller-cta-banner {
+    padding: 0.75rem;
+  }
+
+  .thumbnail {
+    min-width: 50px;
+    width: 50px;
+    height: 50px;
+  }
+
+  .product-description h3 {
+    font-size: 1rem;
   }
 
   .product-description p {
-    font-size: 0.85rem;
+    font-size: 0.9rem;
+  }
+
+  .share-section {
+    padding: 0.75rem;
+  }
+
+  .share-section h3 {
+    font-size: 1rem;
+  }
+
+  .share-header {
+    margin-bottom: 0.75rem;
+  }
+
+  .share-btn {
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
   }
 
   .add-to-cart-large,
   .view-cart-large {
-    padding: 0.8rem 1rem;
-    font-size: 0.9rem;
+    padding: 0.9rem 1.2rem;
+    font-size: 0.95rem;
   }
 }
 

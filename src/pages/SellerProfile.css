@@ -83,6 +83,122 @@
 .seller-cta-right {
   margin-left: auto;
   align-self: flex-end;
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+/* Share Button and Dropdown */
+.seller-share-container {
+  position: relative;
+}
+
+.seller-share-btn {
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  border-radius: 999px;
+  background: transparent;
+  padding: 0;
+  transition: all 0.2s ease;
+}
+
+.seller-share-btn .button-top {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-sizing: border-box;
+  border: 2px solid #6b7280;
+  border-radius: 999px;
+  padding: 0.8rem 1.5rem;
+  background: white;
+  color: #6b7280;
+  transition: all 0.2s ease;
+}
+
+.seller-share-btn:hover .button-top {
+  border-color: #ff6b35;
+  color: #ff6b35;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.2);
+}
+
+.share-dropdown {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  padding: 0.5rem;
+  min-width: 200px;
+  z-index: 100;
+  animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.share-dropdown-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border: none;
+  background: white;
+  color: white;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 0.25rem;
+}
+
+.share-dropdown-item:last-child {
+  margin-bottom: 0;
+}
+
+.share-dropdown-item svg {
+  flex-shrink: 0;
+}
+
+.share-dropdown-item.whatsapp {
+  background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+}
+
+.share-dropdown-item.whatsapp:hover {
+  background: linear-gradient(135deg, #128C7E 0%, #075E54 100%);
+  transform: translateX(4px);
+}
+
+.share-dropdown-item.snapchat {
+  background: linear-gradient(135deg, #FFFC00 0%, #FFF700 100%);
+  color: #000000;
+}
+
+.share-dropdown-item.snapchat:hover {
+  background: linear-gradient(135deg, #FFF700 0%, #F5EC00 100%);
+  transform: translateX(4px);
+}
+
+.share-dropdown-item.instagram {
+  background: linear-gradient(135deg, #E1306C 0%, #C13584 70%, #833AB4 100%);
+}
+
+.share-dropdown-item.instagram:hover {
+  background: linear-gradient(135deg, #C13584 0%, #833AB4 70%, #5851DB 100%);
+  transform: translateX(4px);
 }
 
 .seller-follow-btn {
@@ -127,132 +243,6 @@
   background: #fff5f2;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(255, 107, 53, 0.2);
-}
-
-/* Share Button Styles */
-.seller-action-buttons {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.seller-share-dropdown {
-  position: relative;
-}
-
-.seller-share-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.8rem 1.5rem;
-  font-size: 16px;
-  font-weight: 600;
-  color: #6b7280;
-  background: white;
-  border: 2px solid #e5e7eb;
-  border-radius: 999px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.seller-share-btn svg {
-  width: 20px;
-  height: 20px;
-}
-
-.seller-share-btn:hover {
-  border-color: #ff6b35;
-  color: #ff6b35;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.15);
-}
-
-.seller-share-menu {
-  position: absolute;
-  top: calc(100% + 0.5rem);
-  right: 0;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-  padding: 0.5rem;
-  min-width: 180px;
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(-10px);
-  transition: all 0.2s ease;
-  z-index: 100;
-  pointer-events: none;
-}
-
-.seller-share-menu.open {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
-  pointer-events: auto;
-}
-
-/* Desktop hover support */
-@media (hover: hover) and (pointer: fine) {
-  .seller-share-dropdown:hover .seller-share-menu {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(0);
-    pointer-events: auto;
-  }
-}
-
-.share-menu-item {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  width: 100%;
-  padding: 0.75rem 1rem;
-  border: none;
-  background: transparent;
-  color: #374151;
-  font-size: 15px;
-  font-weight: 500;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  text-align: left;
-}
-
-.share-menu-item svg {
-  width: 18px;
-  height: 18px;
-  flex-shrink: 0;
-}
-
-.share-menu-item:hover {
-  background: #f9fafb;
-}
-
-.share-menu-item.share-whatsapp:hover {
-  background: #dcf8c6;
-  color: #25D366;
-}
-
-.share-menu-item.share-whatsapp svg {
-  color: #25D366;
-}
-
-.share-menu-item.share-snapchat:hover {
-  background: #fff9e6;
-  color: #FFFC00;
-}
-
-.share-menu-item.share-snapchat svg {
-  color: #FFFC00;
-}
-
-.share-menu-item.share-instagram:hover {
-  background: #ffe8f5;
-  color: #E4405F;
-}
-
-.share-menu-item.share-instagram svg {
-  color: #E4405F;
 }
 
 .seller-tabs {
@@ -322,13 +312,6 @@
   gap: 1.5rem;
 }
 
-@media (max-width: 640px) {
-  .seller-products-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
-  }
-}
-
 .seller-products-empty {
   padding: 3rem 1rem;
   text-align: center;
@@ -385,14 +368,14 @@
 /* Tablet and below */
 @media (max-width: 768px) {
   .seller-hero-content {
-    padding: 1rem 1.5rem 1.5rem;
+    padding: 0 1.5rem 1.5rem;
     gap: 1.25rem;
   }
 
   .seller-avatar {
     width: 80px;
     height: 80px;
-    margin-top: -30px;
+    margin-top: -40px;
     font-size: 2rem;
   }
 
@@ -421,7 +404,7 @@
   }
 
   .seller-products-grid {
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
     gap: 1rem;
   }
 
@@ -429,17 +412,28 @@
     margin-left: 0;
     margin-top: 0.75rem;
     align-self: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .seller-share-btn .button-top {
+    padding: 0.7rem 1.3rem;
+    font-size: 0.95rem;
+  }
+
+  .share-dropdown {
+    min-width: 180px;
+  }
+
+  .share-dropdown-item {
+    padding: 0.65rem 0.9rem;
+    font-size: 0.9rem;
   }
 }
 
 /* Mobile */
 @media (max-width: 480px) {
-  .seller-hero {
-    margin-top: 1rem;
-  }
-
   .seller-hero-content {
-    padding: 1.5rem 1rem 1rem;
+    padding: 0 1rem 1rem;
     flex-direction: column;
     align-items: center;
     text-align: center;
@@ -449,7 +443,7 @@
   .seller-avatar {
     width: 72px;
     height: 72px;
-    margin-top: 0;
+    margin-top: -36px;
     font-size: 1.75rem;
     border-width: 2px;
   }
@@ -496,39 +490,44 @@
   .seller-cta-right {
     width: 100%;
     align-self: center;
-  }
-
-  .seller-follow-btn {
-    width: 100%;
-  }
-
-  .seller-follow-btn .button-top {
-    width: 100%;
-    padding: 0.75rem 1.5rem;
-    font-size: 0.95rem;
-  }
-
-  .seller-action-buttons {
-    flex-direction: column;
-    width: 100%;
+    justify-content: center;
     gap: 0.5rem;
   }
 
-  .seller-share-dropdown {
-    width: 100%;
+  .seller-share-container {
+    flex: 1;
   }
 
   .seller-share-btn {
     width: 100%;
+  }
+
+  .seller-share-btn .button-top {
+    width: 100%;
+    padding: 0.75rem 1.2rem;
+    font-size: 0.9rem;
     justify-content: center;
-    padding: 0.7rem 1.5rem;
+  }
+
+  .share-dropdown {
+    left: 0;
+    right: 0;
+    min-width: 100%;
+  }
+
+  .share-dropdown-item {
+    padding: 0.75rem 1rem;
     font-size: 0.95rem;
   }
 
-  .seller-share-menu {
-    left: 0;
-    right: 0;
-    min-width: auto;
+  .seller-follow-btn {
+    flex: 1;
+  }
+
+  .seller-follow-btn .button-top {
+    width: 100%;
+    padding: 0.75rem 1.2rem;
+    font-size: 0.9rem;
   }
 
   .seller-tabs {
@@ -558,8 +557,8 @@
   }
 
   .seller-products-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.75rem;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 0.875rem;
   }
 
   .seller-info-grid {
@@ -598,8 +597,7 @@
   }
 
   .seller-products-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.5rem;
+    grid-template-columns: 1fr;
   }
 }
 

@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import { Link } from 'react-router-dom';
 import { apiService } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import { Loader } from '../components/Loader';
 import { getImageUrl } from '../utils/imageUtils';
 import './Network.css';
@@ -127,18 +128,25 @@ function useDebounce<T>(value: T, delay: number): T {
 }
 
 export function Network() {
+  const { isAuthenticated } = useAuth();
+  const [activeTab, setActiveTab] = useState<'all' | 'following'>('all');
   const [sellers, setSellers] = useState<Seller[]>([]);
   const [allSellers, setAllSellers] = useState<Seller[]>([]); // Store all sellers for client-side filtering
+  const [followingSellers, setFollowingSellers] = useState<Seller[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [totalFollowing, setTotalFollowing] = useState(0);
   
   // Debounce search query to reduce re-renders
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   useEffect(() => {
     loadSellers();
-  }, []);
+    if (isAuthenticated) {
+      loadFollowingSellers();
+    }
+  }, [isAuthenticated]);
 
   const loadSellers = async () => {
     try {
@@ -151,13 +159,40 @@ export function Network() {
       const normalizedSellers = Array.isArray(sellersData) ? sellersData : [];
       
       setAllSellers(normalizedSellers); // Store all sellers
-      setSellers(normalizedSellers);
+      if (activeTab === 'all') {
+        setSellers(normalizedSellers);
+      }
       
       // Fetch follower counts for all sellers
       loadFollowerCounts(normalizedSellers);
     } catch (err) {
       console.error('Failed to load sellers:', err);
       setError('Failed to load sellers. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadFollowingSellers = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await apiService.getFollowingSellers();
+      
+      // Extract sellers from the response
+      const followingData = response?.following_sellers?.data || [];
+      const normalizedFollowing = Array.isArray(followingData) ? followingData : [];
+      
+      setFollowingSellers(normalizedFollowing);
+      setTotalFollowing(response?.total_following || 0);
+      
+      if (activeTab === 'following') {
+        setSellers(normalizedFollowing);
+      }
+    } catch (err) {
+      console.error('Failed to load following sellers:', err);
+      // Don't set error for following - just keep it empty
+      setFollowingSellers([]);
     } finally {
       setLoading(false);
     }
@@ -225,22 +260,36 @@ export function Network() {
 
   // Client-side filtering with useMemo for performance
   const filteredSellers = useMemo(() => {
+    const sourceData = activeTab === 'all' ? allSellers : followingSellers;
+    
     if (!debouncedSearchQuery.trim()) {
-      return allSellers;
+      return sourceData;
     }
 
     const query = debouncedSearchQuery.toLowerCase().trim();
-    return allSellers.filter(seller => 
+    return sourceData.filter(seller => 
       seller.shop_name?.toLowerCase().includes(query) ||
       seller.location?.toLowerCase().includes(query) ||
       seller.about?.toLowerCase().includes(query)
     );
-  }, [allSellers, debouncedSearchQuery]);
+  }, [allSellers, followingSellers, activeTab, debouncedSearchQuery]);
 
   // Update sellers when filtered results change
   useEffect(() => {
     setSellers(filteredSellers);
   }, [filteredSellers]);
+
+  // Handle tab change
+  const handleTabChange = useCallback((tab: 'all' | 'following') => {
+    setActiveTab(tab);
+    setSearchQuery(''); // Clear search when switching tabs
+    
+    if (tab === 'all') {
+      setSellers(allSellers);
+    } else {
+      setSellers(followingSellers);
+    }
+  }, [allSellers, followingSellers]);
 
   if (loading) {
     return (
@@ -270,6 +319,24 @@ export function Network() {
         <div className="network-header">
           <h1 className="network-title">Network</h1>
           <p className="network-subtitle">Discover and connect with sellers on Ocean</p>
+          
+          {/* Tabs */}
+          {isAuthenticated && (
+            <div className="network-tabs">
+              <button
+                className={`network-tab ${activeTab === 'all' ? 'active' : ''}`}
+                onClick={() => handleTabChange('all')}
+              >
+                All Sellers
+              </button>
+              <button
+                className={`network-tab ${activeTab === 'following' ? 'active' : ''}`}
+                onClick={() => handleTabChange('following')}
+              >
+                Following {totalFollowing > 0 && `(${totalFollowing})`}
+              </button>
+            </div>
+          )}
           
           <form onSubmit={handleSearch} className="network-search-form">
             <div className="search-input-wrapper">
@@ -317,7 +384,13 @@ export function Network() {
 
         {sellers.length === 0 ? (
           <div className="network-empty">
-            <p>{searchQuery ? 'No sellers found matching your search.' : 'No sellers found.'}</p>
+            <p>
+              {searchQuery 
+                ? 'No sellers found matching your search.' 
+                : activeTab === 'following' 
+                ? "You're not following any sellers yet. Start following sellers to see them here!" 
+                : 'No sellers found.'}
+            </p>
           </div>
         ) : (
           <div className="sellers-grid">

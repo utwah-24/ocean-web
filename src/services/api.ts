@@ -1026,6 +1026,55 @@ class ApiService {
     return response.json();
   }
 
+  // Update custom product details
+  async updateCustomProductDetails(productId: number, data: {
+    name?: string;
+    description?: string;
+    price?: string;
+    category_id?: number;
+    subcategory_id?: number;
+  }): Promise<any> {
+    return this.request(`/seller/custom-products/${productId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+  }
+
+  // Update custom product images
+  async updateCustomProductImages(productId: number, imageData: FormData): Promise<any> {
+    const token = this.getAuthToken();
+    const headers: Record<string, string> = {
+      'Accept': 'application/json',
+    };
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const url = `${API_BASE_URL}/seller/custom-products/${productId}/images`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: imageData,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to update product images: ${response.statusText}`);
+    }
+
+    return response.json();
+  }
+
+  // Delete custom product
+  async deleteCustomProduct(productId: number): Promise<any> {
+    return this.request(`/seller/custom-products/${productId}`, {
+      method: 'DELETE',
+    });
+  }
+
   // ========== Messaging API Methods ==========
 
   // Get user conversations

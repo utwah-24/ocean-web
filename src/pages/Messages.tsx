@@ -171,7 +171,17 @@ export function Messages() {
       );
       
       // Add message to local state immediately
-      setMessages(prev => [...prev, sentMessage]);
+      // Ensure sender has phone field
+      const messageWithSender: Message = {
+        ...sentMessage,
+        sender: sentMessage.sender ? {
+          id: sentMessage.sender.id,
+          name: sentMessage.sender.name,
+          phone: (sentMessage.sender as any).phone || user?.phone || '',
+          email: (sentMessage.sender as any).email,
+        } : undefined,
+      };
+      setMessages(prev => [...prev, messageWithSender]);
       
       // Update conversation's last_message
       setConversations(prev => prev.map(conv => 

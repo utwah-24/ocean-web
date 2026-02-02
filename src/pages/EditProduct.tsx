@@ -68,7 +68,7 @@ export function EditProduct() {
     if (formData.category_id && formData.category_id !== '' && formData.category_id !== initialCategoryId) {
       const categoryIdNum = parseInt(formData.category_id);
       if (categoryIdNum && categoryIdNum > 0) {
-        loadSubcategories(categoryIdNum);
+        loadSubcategories();
       }
     }
   }, [formData.category_id, initialCategoryId]);
@@ -133,7 +133,7 @@ export function EditProduct() {
 
       // Load subcategories if category is set
       if (categoryId && categoryId !== 0) {
-        await loadSubcategories(Number(categoryId));
+        await loadSubcategories();
       }
     } catch (err) {
       console.error('Failed to load product:', err);
@@ -153,10 +153,10 @@ export function EditProduct() {
     }
   };
 
-  const loadSubcategories = async (categoryId: number) => {
+  const loadSubcategories = async () => {
     setLoadingSubcategories(true);
     try {
-      const response = await apiService.getProductSubcategories(categoryId);
+      const response = await apiService.getSubcategories();
       const subcategoriesData = Array.isArray(response) ? response : [];
       setSubcategories(subcategoriesData);
     } catch (err) {
@@ -219,7 +219,7 @@ export function EditProduct() {
       subcategory_id: '', // Reset subcategory when category changes
     }));
     setShowCategorySheet(false);
-    loadSubcategories(categoryId);
+    loadSubcategories();
   };
 
   const handleSubcategorySelect = (subcategoryId: number, _subcategoryName: string) => {

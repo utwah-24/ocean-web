@@ -146,10 +146,10 @@ export function AddProduct() {
     }
   };
 
-  const loadSubcategories = async (categoryId: number) => {
+  const loadSubcategories = async () => {
     setLoadingSubcategories(true);
     try {
-      const response = await apiService.getProductSubcategories(categoryId);
+      const response = await apiService.getSubcategories();
       const subcategoriesData = Array.isArray(response) ? response : [];
       setSubcategories(subcategoriesData);
     } catch (err) {
@@ -168,7 +168,7 @@ export function AddProduct() {
     }));
     setShowCategorySheet(false);
     // Load subcategories for the selected category
-    loadSubcategories(categoryId);
+    loadSubcategories();
   };
 
   const handleSubcategorySelect = (subcategoryId: number, _subcategoryName: string) => {

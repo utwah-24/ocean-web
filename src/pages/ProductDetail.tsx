@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { apiService } from '../services/api';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 import { formatPrice } from '../utils/formatPrice';
 import { getImageUrl, handleImageError } from '../utils/imageUtils';
 import { Loader } from '../components/Loader';
@@ -11,11 +12,13 @@ export function ProductDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { addToCart } = useCart();
+  const { user, isAuthenticated } = useAuth();
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
   const [justAdded, setJustAdded] = useState(false);
+  const [chatSending, setChatSending] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -62,6 +65,48 @@ export function ProductDetail() {
           alert('Link copied! You can now paste it on Instagram.');
         });
         break;
+    }
+  };
+
+  const handleQuickChat = async () => {
+    if (!isAuthenticated || !user) {
+      navigate('/login');
+      return;
+    }
+
+    if (!product || !sellerId || chatSending) return;
+
+    setChatSending(true);
+    try {
+      // Get seller info to find their user_id
+      const seller = await apiService.getSeller(sellerId);
+      const sellerUserId = seller.user_id || seller.userId;
+      
+      if (!sellerUserId) {
+        alert('Unable to find seller information. Please try again.');
+        return;
+      }
+
+      // Create or get conversation
+      const conversation = await apiService.createConversation(user.id, sellerUserId);
+      const conversationId = conversation.conversation_id || conversation.id;
+
+      // Create product card message with image, name, price, and custom text
+      const productImageUrl = getImageUrl(product.image);
+      const productCardMessage = `Hey, I really like this. Is it available?\n\n📦 ${product.name}\n💰 ${formatPrice(product.price)}\n🖼️ ${productImageUrl}`;
+      
+      // Send message with product card info
+      await apiService.sendMessage(conversationId, user.id, productCardMessage);
+
+      // Navigate to messages page with conversation selected
+      navigate('/messages', { 
+        state: { conversationId } 
+      });
+    } catch (error) {
+      console.error('Failed to start chat:', error);
+      alert('Failed to start chat. Please try again.');
+    } finally {
+      setChatSending(false);
     }
   };
 
@@ -182,11 +227,34 @@ export function ProductDetail() {
                 )}
               </div>
             </div>
-            {sellerId ? (
-              <Link to={`/sellers/${sellerId}`} className="seller-cta-button">
-                Visit Store
-              </Link>
-            ) : null}
+            <div className="seller-cta-actions">
+              {sellerId ? (
+                <Link to={`/sellers/${sellerId}`} className="seller-cta-button">
+                  Visit Store
+                </Link>
+              ) : null}
+              <button
+                onClick={handleQuickChat}
+                className="seller-chat-button"
+                disabled={chatSending}
+              >
+                {chatSending ? (
+                  <>
+                    <svg className="spinner" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M21 12a9 9 0 11-6.219-8.56"/>
+                    </svg>
+                    <span>Starting chat...</span>
+                  </>
+                ) : (
+                  <>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span>Chat</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
 
           <div className="product-price-large">

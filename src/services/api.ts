@@ -1025,6 +1025,186 @@ class ApiService {
 
     return response.json();
   }
+
+  // ========== Messaging API Methods ==========
+
+  // Get user conversations
+  async getConversations(userId: number): Promise<Array<{
+    id: number;
+    participants: Array<{
+      id: number;
+      name: string;
+      phone: string;
+      email?: string;
+    }>;
+    other_user?: {
+      id: number;
+      name: string;
+      phone: string;
+      email?: string;
+    };
+    last_message?: {
+      id: number;
+      content: string;
+      created_at: string;
+      sender_id: number;
+    };
+    is_read: boolean;
+    created_at: string;
+    updated_at: string;
+  }>> {
+    const raw = await this.request<any>(`/chat/conversations/${userId}`);
+    // Handle both { data: [...] } and direct array formats
+    const conversations = Array.isArray(raw) ? raw : (raw?.data || []);
+    // Process to add other_user field
+    return conversations.map((conv: any) => {
+      const otherUser = conv.participants?.find((p: any) => p.id !== userId);
+      return {
+        ...conv,
+        other_user: otherUser,
+      };
+    });
+  }
+
+  // Get conversation messages
+  async getConversationMessages(conversationId: number, userId: number): Promise<Array<{
+    id: number;
+    conversation_id: number;
+    sender_id: number;
+    content: string;
+    file?: string | null;
+    file_type?: string | null;
+    file_name?: string | null;
+    created_at: string;
+    is_read: boolean;
+    sender?: {
+      id: number;
+      name: string;
+      phone: string;
+      email?: string;
+    };
+  }>> {
+    const raw = await this.request<any>(`/chat/conversations/${conversationId}/messages/${userId}`);
+    // Handle both { data: [...] } and direct array formats
+    return Array.isArray(raw) ? raw : (raw?.data || []);
+  }
+
+  // Create conversation
+  async createConversation(senderId: number, receiverId: number): Promise<{
+    conversation_id?: number;
+    id: number;
+    sender_id: number;
+    receiver_id: number;
+    created_at: string;
+  }> {
+    const raw = await this.request<any>('/chat/conversation', {
+      method: 'POST',
+      body: JSON.stringify({
+        sender_id: senderId,
+        receiver_id: receiverId,
+      }),
+    });
+    // Handle both { data: {...} } and direct object formats
+    const conversation = raw?.data || raw;
+    return {
+      conversation_id: conversation.conversation_id || conversation.id,
+      id: conversation.id || conversation.conversation_id,
+      sender_id: conversation.sender_id,
+      receiver_id: conversation.receiver_id,
+      created_at: conversation.created_at,
+    };
+  }
+
+  // Send message (supports file attachments via FormData)
+  async sendMessage(
+    conversationId: number,
+    senderId: number,
+    content: string,
+    file?: File
+  ): Promise<{
+    id: number;
+    conversation_id: number;
+    sender_id: number;
+    content: string;
+    file?: string | null;
+    file_type?: string | null;
+    file_name?: string | null;
+    created_at: string;
+    is_read: boolean;
+    sender?: {
+      id: number;
+      name: string;
+    };
+  }> {
+    const token = this.getAuthToken();
+    const formData = new FormData();
+    formData.append('sender_id', senderId.toString());
+    formData.append('content', content);
+    if (file) {
+      formData.append('file', file);
+    }
+
+    const headers: Record<string, string> = {
+      'Accept': 'application/json',
+    };
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const url = `${API_BASE_URL}/chat/send/${conversationId}`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      let errorMessage = `API Error: ${response.status} ${response.statusText}`;
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorMessage = errorJson.message || errorJson.error || errorMessage;
+      } catch {
+        errorMessage = errorText || errorMessage;
+      }
+      throw new Error(errorMessage);
+    }
+
+    const raw = await response.json();
+    return raw?.data || raw;
+  }
+
+  // Mark messages as read
+  async markMessagesAsRead(conversationId: number, userId: number): Promise<{
+    status: string;
+    message: string;
+  }> {
+    return this.request(`/chat/conversations/${conversationId}/read/${userId}`, {
+      method: 'POST',
+    });
+  }
+
+  // Delete message
+  async deleteMessage(messageId: number): Promise<{
+    status: string;
+    message: string;
+  }> {
+    return this.request(`/chat/messages/${messageId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Delete conversation
+  async deleteConversation(conversationId: number, userId: number): Promise<{
+    status: string;
+    message: string;
+  }> {
+    return this.request(`/chat/conversations/${conversationId}`, {
+      method: 'DELETE',
+      body: JSON.stringify({ user_id: userId }),
+    });
+  }
 }
 
 export const apiService = new ApiService();

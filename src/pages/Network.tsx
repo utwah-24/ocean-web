@@ -130,8 +130,7 @@ function useDebounce<T>(value: T, delay: number): T {
 export function Network() {
   const { isAuthenticated } = useAuth();
   const [activeTab, setActiveTab] = useState<'all' | 'following'>('all');
-  const [sellers, setSellers] = useState<Seller[]>([]);
-  const [allSellers, setAllSellers] = useState<Seller[]>([]); // Store all sellers for client-side filtering
+  const [allSellers, setAllSellers] = useState<Seller[]>([]);
   const [followingSellers, setFollowingSellers] = useState<Seller[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -142,10 +141,40 @@ export function Network() {
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   useEffect(() => {
-    loadSellers();
-    if (isAuthenticated) {
-      loadFollowingSellers();
-    }
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Load all sellers first
+        const sellersResponse = await apiService.getAllSellers();
+        const sellersData = sellersResponse?.data || (sellersResponse as any)?.sellers || sellersResponse || [];
+        const normalizedSellers = Array.isArray(sellersData) ? sellersData : [];
+        setAllSellers(normalizedSellers);
+        
+        // Load following sellers if authenticated (in parallel, but don't block)
+        if (isAuthenticated) {
+          apiService.getFollowingSellers()
+            .then(response => {
+              const followingData = response?.following_sellers?.data || [];
+              const normalizedFollowing = Array.isArray(followingData) ? followingData : [];
+              setFollowingSellers(normalizedFollowing);
+              setTotalFollowing(response?.total_following || 0);
+            })
+            .catch(err => {
+              console.error('Failed to load following sellers:', err);
+              setFollowingSellers([]);
+            });
+        }
+      } catch (err) {
+        console.error('Failed to load sellers:', err);
+        setError('Failed to load sellers. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadData();
   }, [isAuthenticated]);
 
   const loadSellers = async () => {
@@ -158,93 +187,12 @@ export function Network() {
       const sellersData = response?.data || (response as any)?.sellers || response || [];
       const normalizedSellers = Array.isArray(sellersData) ? sellersData : [];
       
-      setAllSellers(normalizedSellers); // Store all sellers
-      if (activeTab === 'all') {
-        setSellers(normalizedSellers);
-      }
-      
-      // Fetch follower counts for all sellers
-      loadFollowerCounts(normalizedSellers);
+      setAllSellers(normalizedSellers);
     } catch (err) {
       console.error('Failed to load sellers:', err);
       setError('Failed to load sellers. Please try again.');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const loadFollowingSellers = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await apiService.getFollowingSellers();
-      
-      // Extract sellers from the response
-      const followingData = response?.following_sellers?.data || [];
-      const normalizedFollowing = Array.isArray(followingData) ? followingData : [];
-      
-      setFollowingSellers(normalizedFollowing);
-      setTotalFollowing(response?.total_following || 0);
-      
-      if (activeTab === 'following') {
-        setSellers(normalizedFollowing);
-      }
-    } catch (err) {
-      console.error('Failed to load following sellers:', err);
-      // Don't set error for following - just keep it empty
-      setFollowingSellers([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadFollowerCounts = async (sellersToUpdate: Seller[]) => {
-    try {
-      console.log('[Network] Loading follower counts for', sellersToUpdate.length, 'sellers');
-      
-      // Fetch follower counts for all sellers in parallel
-      const followersPromises = sellersToUpdate.map(async (seller) => {
-        try {
-          const response = await apiService.getSellerFollowers(seller.id);
-          console.log(`[Network] Full response for seller ${seller.id} (${seller.shop_name}):`, response);
-          
-          // Handle different response formats
-          const followersCount = response?.total_followers || 
-                                response?.followers?.total || 
-                                (response as any)?.data?.total_followers ||
-                                0;
-          
-          console.log(`[Network] Extracted followers count for seller ${seller.id}:`, followersCount);
-          
-          return {
-            id: seller.id,
-            followers_count: followersCount
-          };
-        } catch (err) {
-          console.error(`Failed to load followers for seller ${seller.id}:`, err);
-          return {
-            id: seller.id,
-            followers_count: seller.followers_count || 0 // Keep existing count if fetch fails
-          };
-        }
-      });
-
-      const followersData = await Promise.all(followersPromises);
-      console.log('[Network] Follower data loaded:', followersData);
-      
-      // Update sellers with follower counts
-      setSellers(prevSellers => {
-        const updated = prevSellers.map(seller => {
-          const followerData = followersData.find(f => f.id === seller.id);
-          return followerData 
-            ? { ...seller, followers_count: followerData.followers_count }
-            : seller;
-        });
-        console.log('[Network] Updated sellers with follower counts:', updated);
-        return updated;
-      });
-    } catch (err) {
-      console.error('Failed to load follower counts:', err);
     }
   };
 
@@ -259,7 +207,7 @@ export function Network() {
   }, []);
 
   // Client-side filtering with useMemo for performance
-  const filteredSellers = useMemo(() => {
+  const displayedSellers = useMemo(() => {
     const sourceData = activeTab === 'all' ? allSellers : followingSellers;
     
     if (!debouncedSearchQuery.trim()) {
@@ -274,22 +222,11 @@ export function Network() {
     );
   }, [allSellers, followingSellers, activeTab, debouncedSearchQuery]);
 
-  // Update sellers when filtered results change
-  useEffect(() => {
-    setSellers(filteredSellers);
-  }, [filteredSellers]);
-
   // Handle tab change
   const handleTabChange = useCallback((tab: 'all' | 'following') => {
     setActiveTab(tab);
     setSearchQuery(''); // Clear search when switching tabs
-    
-    if (tab === 'all') {
-      setSellers(allSellers);
-    } else {
-      setSellers(followingSellers);
-    }
-  }, [allSellers, followingSellers]);
+  }, []);
 
   if (loading) {
     return (
@@ -382,7 +319,7 @@ export function Network() {
           </form>
         </div>
 
-        {sellers.length === 0 ? (
+        {displayedSellers.length === 0 ? (
           <div className="network-empty">
             <p>
               {searchQuery 
@@ -394,7 +331,7 @@ export function Network() {
           </div>
         ) : (
           <div className="sellers-grid">
-            {sellers.map((seller) => (
+            {displayedSellers.map((seller) => (
               <SellerCard key={seller.id} seller={seller} />
             ))}
           </div>
@@ -403,4 +340,3 @@ export function Network() {
     </div>
   );
 }
-

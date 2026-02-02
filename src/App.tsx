@@ -15,6 +15,7 @@ import { Network } from './pages/Network';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { Ads } from './pages/Ads';
+import { Messages } from './pages/Messages';
 import './App.css';
 
 function AppContent() {
@@ -37,6 +38,7 @@ function AppContent() {
           <Route path="/categories" element={<Categories />} />
           <Route path="/network" element={<Network />} />
           <Route path="/ads" element={<Ads />} />
+          <Route path="/messages" element={<Messages />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
         </Routes>
